@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wordle Clone</title>
+  <style>
+    :root {
+      --bg: #121213;
+      --surface: #1a1a1b;
+      --surface-2: #202124;
+      --text: #f8f8f8;
+      --muted: #d7dadc;
+      --empty: #3a3a3c;
+      --filled: #565758;
+      --correct: #538d4e;
+      --present: #b59f3b;
+      --absent: #3a3a3c;
+      --key: #818384;
+      --border: #3a3a3c;
+      --focus: #85c0f9;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    header {
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      flex: 0 0 58px;
+    }
+
+    .header-inner {
+      width: min(100%, 520px);
+      height: 58px;
+      display: grid;
+      grid-template-columns: 120px 1fr 120px;
+      align-items: center;
+      padding: 0 10px;
+    }
+
+    .brand {
+      text-align: center;
+      line-height: 1;
+    }
+
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      letter-spacing: 0;
+      margin: 0;
+      font-weight: 800;
+    }
+
+    .puzzle-id {
+      display: block;
+      margin-top: 3px;
+      color: #b9bbbe;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .icon-button {
+      min-width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .icon-button:hover {
+      background: var(--surface-2);
+    }
+
+    .toast {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      color: #121213;
+      padding: 12px 18px;
+      border-radius: 4px;
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 30;
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+      text-align: center;
+      max-width: calc(100vw - 24px);
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    main {
+      width: 100%;
+      max-width: 520px;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 8px 8px;
+    }
+
+    #board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 5px;
+      width: min(330px, 90vw);
+      aspect-ratio: 5 / 6;
+      flex: 0 1 auto;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+    }
+
+    .tile {
+      border: 2px solid var(--empty);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.7rem, 7vw, 2rem);
+      font-weight: 800;
+      text-transform: uppercase;
+      user-select: none;
+      transition: border-color 0.15s ease;
+      line-height: 1;
+      aspect-ratio: 1;
+    }
+
+    .tile.filled {
+      border-color: var(--filled);
+    }
+
+    .tile.pop {
+      animation: pop 0.1s ease;
+    }
+
+    .tile.flip {
+      animation: flip 0.55s ease forwards;
+    }
+
+    .tile.correct {
+      background: var(--correct);
+      border-color: var(--correct);
+    }
+
+    .tile.present {
+      background: var(--present);
+      border-color: var(--present);
+    }
+
+    .tile.absent {
+      background: var(--absent);
+      border-color: var(--absent);
+    }
+
+    .row.shake {
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes pop {
+      50% {
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes shake {
+      10%,
+      90% {
+        transform: translateX(-1px);
+      }
+
+      20%,
+      80% {
+        transform: translateX(2px);
+      }
+
+      30%,
+      50%,
+      70% {
+        transform: translateX(-4px);
+      }
+
+      40%,
+      60% {
+        transform: translateX(4px);
+      }
+    }
+
+    @keyframes flip {
+      0% {
+        transform: rotateX(0deg);
+      }
+
+      50% {
+        transform: rotateX(90deg);
+      }
+
+      100% {
+        transform: rotateX(0deg);
+      }
+    }
+
+    #keyboard {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 18px;
+      flex: 0 0 auto;
+    }
+
+    .key-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button.key {
+      height: 58px;
+      min-width: 0;
+      flex: 1 1 0;
+      border: 0;
+      border-radius: 4px;
+      background: var(--key);
+      color: var(--text);
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      text-transform: uppercase;
+      padding: 0;
+    }
+
+    button.key.wide {
+      flex: 1.55 1 0;
+      font-size: 12px;
+    }
+
+    button.key.correct {
+      background: var(--correct);
+    }
+
+    button.key.present {
+      background: var(--present);
+    }
+
+    button.key.absent {
+      background: var(--absent);
+    }
+
+    body.checking button.key[data-key="Enter"] {
+      opacity: 0.8;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.58);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 18px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      position: relative;
+      width: min(92vw, 390px);
+      max-height: min(88vh, 680px);
+      overflow: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 12px 46px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 4px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .modal-close:hover {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    .modal h2 {
+      margin: 4px 28px 12px;
+      font-size: 24px;
+    }
+
+    .modal p {
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 10px 0;
+    }
+
+    .answer {
+      font-size: 28px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin: 8px 0 4px;
+    }
+
+    .definition {
+      min-height: 42px;
+      text-align: left;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .stat {
+      min-width: 0;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .distribution {
+      display: grid;
+      gap: 5px;
+      margin: 12px 0 16px;
+      text-align: left;
+    }
+
+    .dist-row {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .dist-track {
+      height: 20px;
+      background: #2f3031;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dist-bar {
+      height: 100%;
+      min-width: 20px;
+      background: var(--filled);
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding-right: 6px;
+      font-size: 12px;
+    }
+
+    .dist-bar.highlight {
+      background: var(--correct);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .modal-actions button,
+    .primary-action {
+      border: 0;
+      border-radius: 4px;
+      padding: 12px 16px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .modal-actions button.primary,
+    .primary-action {
+      background: var(--correct);
+    }
+
+    .copy-box {
+      width: 100%;
+      min-height: 150px;
+      resize: vertical;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0f0f10;
+      color: var(--text);
+      padding: 10px;
+      line-height: 1.35;
+    }
+
+    .custom-form {
+      display: grid;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .custom-form label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .custom-input {
+      width: 100%;
+      height: 48px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      background: #0f0f10;
+      color: var(--text);
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .custom-help {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .custom-link {
+      margin-top: 12px;
+    }
+
+    @media (max-width: 420px) {
+      .header-inner {
+        grid-template-columns: 116px 1fr 116px;
+        padding: 0 6px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .icon-button {
+        min-width: 34px;
+      }
+
+      main {
+        padding-top: 12px;
+      }
+
+      #board {
+        width: min(315px, 92vw);
+      }
+
+      #keyboard {
+        gap: 6px;
+      }
+
+      .key-row {
+        gap: 4px;
+      }
+
+      button.key {
+        height: 52px;
+        font-size: 12px;
+      }
+
+      button.key.wide {
+        font-size: 11px;
+      }
+    }
+
+    @media (max-height: 620px) {
+      main {
+        padding-top: 8px;
+      }
+
+      #board {
+        width: min(290px, 88vw);
+      }
+
+      #keyboard {
+        margin-top: 10px;
+      }
+
+      button.key {
+        height: 46px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div></div>
+      <div class="brand">
+        <h1>Wordle</h1>
+        <span id="puzzleId" class="puzzle-id"></span>
+      </div>
+      <div class="header-actions">
+        <button id="customButton" class="icon-button" type="button" title="Custom word" aria-label="Custom word">+</button>
+        <button id="statsButton" class="icon-button" type="button" title="Stats" aria-label="Stats">%</button>
+        <button id="shareButton" class="icon-button" type="button" title="Share" aria-label="Share">SH</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <main>
+    <div id="board" aria-label="Game board"></div>
+    <div id="keyboard" aria-label="Keyboard"></div>
+  </main>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button id="modalClose" class="modal-close" type="button" aria-label="Close">X</button>
+      <h2 id="modalTitle"></h2>
+      <div id="modalBody"></div>
+      <div id="modalActions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const WORD_LENGTH = 5;
+    const MAX_GUESSES = 6;
+    const REVEAL_STEP = 280;
+    const DAY_MS = 86400000;
+    const BASE_DAY = Date.UTC(2024, 0, 1);
+    const API_BASE = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+
+    const ANSWERS = Object.freeze([
+      "crane", "slate", "flame", "grape", "stone", "brink", "chair", "plant", "smile", "pride",
+      "cloud", "sword", "drink", "ghost", "light", "train", "crown", "beast", "magic", "dream",
+      "water", "green", "black", "white", "tiger", "eagle", "zebra", "mango", "peach", "berry",
+      "cider", "bloom", "raven", "amber", "glory", "frost", "sugar", "ocean", "river", "field",
+      "honey", "spark", "orbit", "piano", "maple", "brave", "fresh", "quiet", "sound", "blush",
+      "linen", "vivid", "lucky", "harsh", "noble", "wheat", "laser", "coral", "feast", "giant",
+      "shard", "shelf", "cabin", "flint", "spice", "globe", "march", "rally", "swirl", "vapor",
+      "trace", "knock", "drift", "pilot", "charm", "brass", "stark", "creek", "medal", "olive",
+      "toast", "blaze", "fairy", "grace", "movie", "score", "court", "prime", "novel", "slope",
+      "proud", "sweep", "level", "meter", "daisy", "hatch", "spoon", "vital", "lemon", "candy",
+      "fable", "cargo", "donut", "logic", "north", "south", "cable", "urban", "ranch", "index",
+      "quest", "hinge", "union", "siren", "adore", "clean", "creep", "delta", "evoke", "flora"
+    ]);
+
+    const EXTRA_GUESSES = Object.freeze([
+      "about", "above", "abuse", "actor", "acute", "admit", "adopt", "adult", "after", "again",
+      "agent", "agree", "ahead", "alarm", "album", "alert", "alike", "alive", "allow", "alone",
+      "along", "alter", "among", "anger", "angle", "angry", "apart", "apple", "apply", "arena",
+      "argue", "arise", "array", "aside", "asset", "audio", "audit", "avoid", "award", "aware",
+      "badly", "baker", "bases", "basic", "basis", "beach", "began", "begin", "begun", "being",
+      "below", "bench", "birth", "block", "blood", "board", "boost", "booth", "bound", "brain",
+      "brand", "bread", "break", "breed", "brief", "bring", "broad", "broke", "brown", "build",
+      "built", "buyer", "cause", "chain", "chart", "chase", "cheap", "check", "chest", "chief",
+      "child", "china", "chose", "civil", "claim", "class", "clear", "climb", "clock", "close",
+      "coach", "coast", "could", "count", "cover", "craft", "crash", "cream", "crime", "cross",
+      "crowd", "curve", "cycle", "daily", "dance", "dated", "dealt", "death", "debut", "delay",
+      "depth", "doing", "doubt", "dozen", "draft", "drama", "drawn", "dress", "dried", "drive",
+      "drove", "dying", "early", "earth", "eight", "elite", "empty", "enemy", "enjoy", "enter",
+      "entry", "equal", "error", "event", "every", "exact", "exist", "extra", "faith", "false",
+      "fault", "fiber", "final", "first", "fixed", "flash", "fleet", "floor", "fluid", "focus",
+      "force", "forth", "forty", "forum", "found", "frame", "frank", "fraud", "front", "fruit",
+      "fully", "funny", "glass", "grant", "grass", "great", "gross", "group", "grown", "guard",
+      "guess", "guest", "guide", "happy", "heart", "heavy", "hence", "horse", "hotel", "house",
+      "human", "ideal", "image", "imply", "inner", "input", "issue", "joint", "judge", "known",
+      "label", "large", "later", "laugh", "layer", "learn", "least", "leave", "legal", "limit",
+      "local", "loose", "lower", "lunch", "major", "maker", "march", "match", "maybe", "mayor",
+      "meant", "media", "metal", "might", "minor", "minus", "mixed", "model", "money", "month",
+      "moral", "motor", "mount", "mouse", "mouth", "music", "needs", "never", "night", "noise",
+      "noted", "nurse", "occur", "offer", "often", "order", "other", "ought", "paint", "panel",
+      "paper", "party", "peace", "phase", "phone", "photo", "piece", "place", "plain", "plane",
+      "plate", "point", "pound", "power", "press", "price", "prior", "proof", "queen", "quick",
+      "radio", "raise", "range", "rapid", "ratio", "reach", "ready", "refer", "right", "rival",
+      "rough", "round", "route", "royal", "rural", "scale", "scene", "scope", "sense", "serve",
+      "seven", "shall", "shape", "share", "sharp", "sheet", "shift", "shirt", "shock", "shoot",
+      "short", "shown", "sight", "since", "sixth", "sixty", "sized", "skill", "sleep", "slide",
+      "small", "smart", "solid", "solve", "sorry", "space", "spare", "speak", "speed", "spend",
+      "spent", "split", "spoke", "sport", "staff", "stage", "stake", "stand", "start", "state",
+      "steam", "steel", "stick", "still", "stock", "stood", "store", "storm", "story", "strip",
+      "stuck", "study", "stuff", "style", "table", "taken", "taste", "taxes", "teach", "teeth",
+      "terry", "thank", "their", "theme", "there", "these", "thick", "thing", "think", "third",
+      "those", "three", "throw", "tight", "times", "tired", "title", "today", "topic", "total",
+      "touch", "tough", "tower", "track", "trade", "treat", "trend", "trial", "tried", "tries",
+      "truck", "truly", "trust", "truth", "twice", "under", "undue", "upset", "usage", "usual",
+      "valid", "value", "video", "visit", "voice", "waste", "watch", "wheel", "where", "which",
+      "while", "whole", "whose", "woman", "world", "worry", "worse", "worst", "worth", "would",
+      "write", "wrong", "wrote", "yield", "young", "youth"
+    ]);
+
+    const KEYBOARD_ROWS = Object.freeze([
+      ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+      ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
+      ["Enter", "z", "x", "c", "v", "b", "n", "m", "Backspace"]
+    ]);
+
+    const STATUS_PRIORITY = Object.freeze({ absent: 1, present: 2, correct: 3 });
+    const SHARE_GLYPHS = Object.freeze({ correct: "🟩", present: "🟨", absent: "⬛" });
+    const VALID_WORDS = new Set([...ANSWERS, ...EXTRA_GUESSES]);
+    const customWord = getCustomWordFromUrl();
+    const puzzleId = getPuzzleId();
+    const puzzleLabel = customWord ? "Custom" : `#${puzzleId}`;
+    const puzzleKey = customWord ? `custom:${encodeCustomWord(customWord)}` : `daily:${puzzleId}`;
+    const secretWord = customWord || ANSWERS[positiveModulo(puzzleId, ANSWERS.length)];
+    const stateKey = `wordle-clone:${puzzleKey}`;
+    const statsKey = "wordle-clone:stats";
+    const dictionaryCache = new Map();
+    const definitionCache = new Map();
+
+    let state = loadState();
+    let isChecking = false;
+    let isRevealing = false;
+
+    const boardEl = document.getElementById("board");
+    const keyboardEl = document.getElementById("keyboard");
+    const toastEl = document.getElementById("toast");
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalActions = document.getElementById("modalActions");
+    const modalClose = document.getElementById("modalClose");
+    const customButton = document.getElementById("customButton");
+    const statsButton = document.getElementById("statsButton");
+    const shareButton = document.getElementById("shareButton");
+    const puzzleIdEl = document.getElementById("puzzleId");
+
+    puzzleIdEl.textContent = puzzleLabel;
+    buildBoard();
+    buildKeyboard();
+    renderBoard();
+    renderKeyboard();
+
+    if (state.gameOver && !state.recordedStats) {
+      recordStats();
+      saveState();
+    }
+
+    document.addEventListener("keydown", onPhysicalKey);
+    modalBackdrop.addEventListener("click", (event) => {
+      if (event.target === modalBackdrop) closeModal();
+    });
+    modalClose.addEventListener("click", closeModal);
+    customButton.addEventListener("click", showCustomModal);
+    statsButton.addEventListener("click", showStatsModal);
+    shareButton.addEventListener("click", shareResult);
+
+    function positiveModulo(value, size) {
+      return ((value % size) + size) % size;
+    }
+
+    function getPuzzleId() {
+      const params = new URLSearchParams(window.location.search);
+      const rawDay = params.get("day");
+      const requestedDay = rawDay === null ? NaN : Number(rawDay);
+
+      if (Number.isInteger(requestedDay) && requestedDay >= 0) {
+        return requestedDay;
+      }
+
+      return Math.floor((Date.now() - BASE_DAY) / DAY_MS);
+    }
+
+    function getCustomWordFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const rawWord = params.get("word");
+      if (!rawWord) return "";
+
+      const decoded = decodeCustomWord(rawWord);
+      return /^[a-z]{5}$/.test(decoded) ? decoded : "";
+    }
+
+    function encodeCustomWord(word) {
+      return btoa(word.toLowerCase())
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/g, "");
+    }
+
+    function decodeCustomWord(value) {
+      try {
+        const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+        return atob(padded).toLowerCase().replace(/[^a-z]/g, "").slice(0, WORD_LENGTH);
+      } catch (error) {
+        return "";
+      }
+    }
+
+    function defaultState() {
+      return {
+        guesses: [],
+        evaluations: [],
+        currentGuess: "",
+        gameOver: false,
+        won: false,
+        recordedStats: false
+      };
+    }
+
+    function loadState() {
+      try {
+        return normalizeState(JSON.parse(localStorage.getItem(stateKey)));
+      } catch (error) {
+        return defaultState();
+      }
+    }
+
+    function normalizeState(saved) {
+      if (!saved || typeof saved !== "object") return defaultState();
+
+      const guesses = Array.isArray(saved.guesses)
+        ? saved.guesses.filter((guess) => /^[a-z]{5}$/.test(guess)).slice(0, MAX_GUESSES)
+        : [];
+
+      const savedEvaluations = Array.isArray(saved.evaluations) ? saved.evaluations : [];
+      const evaluations = guesses.map((guess, index) => {
+        const row = savedEvaluations[index];
+
+        if (!Array.isArray(row) || row.length !== WORD_LENGTH) {
+          return getResult(guess, secretWord);
+        }
+
+        return row.every((status) => STATUS_PRIORITY[status])
+          ? row
+          : getResult(guess, secretWord);
+      });
+
+      const gameOver = Boolean(saved.gameOver) || guesses.length === MAX_GUESSES || guesses.includes(secretWord);
+      const currentGuess = gameOver ? "" : String(saved.currentGuess || "").toLowerCase().replace(/[^a-z]/g, "").slice(0, WORD_LENGTH);
+
+      return {
+        guesses,
+        evaluations,
+        currentGuess,
+        gameOver,
+        won: Boolean(saved.won) || guesses.includes(secretWord),
+        recordedStats: Boolean(saved.recordedStats)
+      };
+    }
+
+    function saveState() {
+      localStorage.setItem(stateKey, JSON.stringify(state));
+    }
+
+    function buildBoard() {
+      boardEl.innerHTML = "";
+
+      for (let rowIndex = 0; rowIndex < MAX_GUESSES; rowIndex += 1) {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.dataset.row = String(rowIndex);
+
+        for (let colIndex = 0; colIndex < WORD_LENGTH; colIndex += 1) {
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          tile.dataset.row = String(rowIndex);
+          tile.dataset.col = String(colIndex);
+          row.appendChild(tile);
+        }
+
+        boardEl.appendChild(row);
+      }
+    }
+
+    function buildKeyboard() {
+      keyboardEl.innerHTML = "";
+
+      KEYBOARD_ROWS.forEach((rowKeys) => {
+        const row = document.createElement("div");
+        row.className = "key-row";
+
+        rowKeys.forEach((keyValue) => {
+          const key = document.createElement("button");
+          key.className = "key";
+          key.type = "button";
+          key.dataset.key = keyValue;
+          key.textContent = keyValue === "Backspace" ? "Del" : keyValue;
+          key.setAttribute("aria-label", keyValue === "Backspace" ? "Backspace" : keyValue);
+
+          if (keyValue === "Enter" || keyValue === "Backspace") {
+            key.classList.add("wide");
+          }
+
+          key.addEventListener("click", () => handleKey(keyValue));
+          row.appendChild(key);
+        });
+
+        keyboardEl.appendChild(row);
+      });
+    }
+
+    function renderBoard() {
+      for (let rowIndex = 0; rowIndex < MAX_GUESSES; rowIndex += 1) {
+        const submittedGuess = state.guesses[rowIndex];
+        const activeGuess = rowIndex === state.guesses.length ? state.currentGuess : "";
+
+        for (let colIndex = 0; colIndex < WORD_LENGTH; colIndex += 1) {
+          const tile = getTile(rowIndex, colIndex);
+          const letter = submittedGuess ? submittedGuess[colIndex] : activeGuess[colIndex] || "";
+          tile.className = "tile";
+          tile.textContent = letter;
+
+          if (letter) {
+            tile.classList.add("filled");
+          }
+
+          if (submittedGuess && state.evaluations[rowIndex]) {
+            tile.classList.add(state.evaluations[rowIndex][colIndex]);
+          }
+        }
+      }
+    }
+
+    function renderKeyboard() {
+      const statuses = getKeyboardStatuses();
+
+      document.querySelectorAll("button.key").forEach((key) => {
+        key.classList.remove("correct", "present", "absent");
+        const keyValue = key.dataset.key;
+
+        if (statuses[keyValue]) {
+          key.classList.add(statuses[keyValue]);
+        }
+      });
+    }
+
+    function onPhysicalKey(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+      const targetTag = event.target && event.target.tagName;
+      if (targetTag === "INPUT" || targetTag === "TEXTAREA" || targetTag === "SELECT") return;
+
+      if (event.key === "Enter") {
+        handleKey("Enter");
+      } else if (event.key === "Backspace") {
+        handleKey("Backspace");
+      } else if (/^[a-zA-Z]$/.test(event.key)) {
+        handleKey(event.key.toLowerCase());
+      }
+    }
+
+    function handleKey(key) {
+      if (state.gameOver || isChecking || isRevealing) return;
+
+      if (key === "Enter") {
+        submitGuess();
+        return;
+      }
+
+      if (key === "Backspace") {
+        deleteLetter();
+        return;
+      }
+
+      if (/^[a-z]$/.test(key)) {
+        addLetter(key);
+      }
+    }
+
+    function addLetter(letter) {
+      if (state.currentGuess.length >= WORD_LENGTH) return;
+
+      const rowIndex = state.guesses.length;
+      const colIndex = state.currentGuess.length;
+      state.currentGuess += letter;
+      saveState();
+
+      const tile = getTile(rowIndex, colIndex);
+      tile.textContent = letter;
+      tile.classList.add("filled", "pop");
+      setTimeout(() => tile.classList.remove("pop"), 120);
+    }
+
+    function deleteLetter() {
+      if (!state.currentGuess.length) return;
+
+      const rowIndex = state.guesses.length;
+      const colIndex = state.currentGuess.length - 1;
+      state.currentGuess = state.currentGuess.slice(0, -1);
+      saveState();
+
+      const tile = getTile(rowIndex, colIndex);
+      tile.textContent = "";
+      tile.className = "tile";
+    }
+
+    async function submitGuess() {
+      if (state.currentGuess.length < WORD_LENGTH) {
+        showToast("Not enough letters");
+        shakeRow();
+        return;
+      }
+
+      const guess = state.currentGuess;
+      setChecking(true);
+      const validWord = await isValidWord(guess);
+      setChecking(false);
+
+      if (!validWord) {
+        showToast("Not in word list");
+        shakeRow();
+        return;
+      }
+
+      const rowIndex = state.guesses.length;
+      const result = getResult(guess, secretWord);
+      state.guesses.push(guess);
+      state.evaluations.push(result);
+      state.currentGuess = "";
+      saveState();
+      isRevealing = true;
+
+      revealRow(rowIndex, guess, result, () => {
+        const won = guess === secretWord;
+        const finished = won || state.guesses.length === MAX_GUESSES;
+
+        if (finished) {
+          state.gameOver = true;
+          state.won = won;
+          recordStats();
+          saveState();
+
+          const messages = ["Genius", "Magnificent", "Impressive", "Splendid", "Great", "Phew"];
+          showToast(won ? messages[rowIndex] : secretWord.toUpperCase());
+          showEndModal();
+        }
+
+        isRevealing = false;
+        renderKeyboard();
+      });
+    }
+
+    function revealRow(rowIndex, guess, result, done) {
+      result.forEach((status, index) => {
+        setTimeout(() => {
+          const tile = getTile(rowIndex, index);
+          tile.classList.add("flip", status);
+          updateKeyboard(guess[index], status);
+        }, index * REVEAL_STEP);
+      });
+
+      setTimeout(done, WORD_LENGTH * REVEAL_STEP + 260);
+    }
+
+    async function isValidWord(word) {
+      if (word === secretWord) return true;
+      if (VALID_WORDS.has(word)) return true;
+      if (dictionaryCache.has(word)) return dictionaryCache.get(word);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+      try {
+        const response = await fetch(API_BASE + encodeURIComponent(word), {
+          signal: controller.signal,
+          headers: { Accept: "application/json" }
+        });
+
+        const valid = response.ok;
+        dictionaryCache.set(word, valid);
+        return valid;
+      } catch (error) {
+        showToast("Dictionary offline");
+        return false;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    async function fetchDefinition(word) {
+      if (definitionCache.has(word)) return definitionCache.get(word);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+      try {
+        const response = await fetch(API_BASE + encodeURIComponent(word), {
+          signal: controller.signal,
+          headers: { Accept: "application/json" }
+        });
+
+        if (!response.ok) return "";
+
+        const entries = await response.json();
+        const meanings = Array.isArray(entries) && entries[0] ? entries[0].meanings || [] : [];
+
+        for (const meaning of meanings) {
+          const definitions = meaning.definitions || [];
+          if (definitions[0] && definitions[0].definition) {
+            const definition = definitions[0].definition;
+            definitionCache.set(word, definition);
+            return definition;
+          }
+        }
+
+        return "";
+      } catch (error) {
+        return "";
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    function getResult(guess, answer) {
+      const result = Array(WORD_LENGTH).fill("absent");
+      const remaining = answer.split("");
+
+      for (let index = 0; index < WORD_LENGTH; index += 1) {
+        if (guess[index] === answer[index]) {
+          result[index] = "correct";
+          remaining[index] = null;
+        }
+      }
+
+      for (let index = 0; index < WORD_LENGTH; index += 1) {
+        if (result[index] === "correct") continue;
+
+        const matchIndex = remaining.indexOf(guess[index]);
+        if (matchIndex !== -1) {
+          result[index] = "present";
+          remaining[matchIndex] = null;
+        }
+      }
+
+      return result;
+    }
+
+    function getKeyboardStatuses() {
+      const statuses = {};
+
+      state.guesses.forEach((guess, rowIndex) => {
+        const result = state.evaluations[rowIndex] || [];
+
+        guess.split("").forEach((letter, index) => {
+          const status = result[index];
+          const current = statuses[letter];
+
+          if (!current || STATUS_PRIORITY[status] > STATUS_PRIORITY[current]) {
+            statuses[letter] = status;
+          }
+        });
+      });
+
+      return statuses;
+    }
+
+    function updateKeyboard(letter, status) {
+      const key = document.querySelector(`button.key[data-key="${letter}"]`);
+      if (!key) return;
+
+      const current = ["correct", "present", "absent"].find((item) => key.classList.contains(item));
+
+      if (!current || STATUS_PRIORITY[status] > STATUS_PRIORITY[current]) {
+        key.classList.remove("correct", "present", "absent");
+        key.classList.add(status);
+      }
+    }
+
+    function getTile(rowIndex, colIndex) {
+      return document.querySelector(`.tile[data-row="${rowIndex}"][data-col="${colIndex}"]`);
+    }
+
+    function shakeRow() {
+      const row = document.querySelector(`.row[data-row="${state.guesses.length}"]`);
+      if (!row) return;
+
+      row.classList.add("shake");
+      setTimeout(() => row.classList.remove("shake"), 400);
+    }
+
+    function setChecking(value) {
+      isChecking = value;
+      document.body.classList.toggle("checking", value);
+
+      const enterKey = document.querySelector('button.key[data-key="Enter"]');
+      if (enterKey) {
+        enterKey.textContent = value ? "..." : "Enter";
+      }
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      clearTimeout(showToast.timeout);
+      showToast.timeout = setTimeout(() => {
+        toastEl.classList.remove("show");
+      }, 1400);
+    }
+
+    function openModal(title) {
+      modalTitle.textContent = title;
+      modalBody.innerHTML = "";
+      modalActions.innerHTML = "";
+      modalBackdrop.classList.add("show");
+    }
+
+    function closeModal() {
+      modalBackdrop.classList.remove("show");
+    }
+
+    function showCustomModal() {
+      openModal("Custom Word");
+
+      const form = document.createElement("form");
+      form.className = "custom-form";
+
+      const label = document.createElement("label");
+      label.setAttribute("for", "customWordInput");
+      label.textContent = "Answer word";
+
+      const input = document.createElement("input");
+      input.id = "customWordInput";
+      input.className = "custom-input";
+      input.type = "text";
+      input.inputMode = "latin";
+      input.autocomplete = "off";
+      input.spellcheck = false;
+      input.maxLength = WORD_LENGTH;
+      input.pattern = "[A-Za-z]{5}";
+      input.value = customWord || "";
+
+      const help = document.createElement("p");
+      help.className = "custom-help";
+      help.textContent = "Five letters.";
+
+      const submit = document.createElement("button");
+      submit.className = "primary-action";
+      submit.type = "submit";
+      submit.textContent = "Make Link";
+
+      input.addEventListener("input", () => {
+        input.value = input.value.toLowerCase().replace(/[^a-z]/g, "").slice(0, WORD_LENGTH);
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const word = input.value.toLowerCase();
+
+        if (!/^[a-z]{5}$/.test(word)) {
+          help.textContent = "Use exactly five letters.";
+          showToast("Use five letters");
+          return;
+        }
+
+        submit.disabled = true;
+        submit.textContent = "Checking...";
+        help.textContent = "Checking dictionary...";
+
+        const valid = await isValidWord(word);
+        submit.disabled = false;
+        submit.textContent = "Make Link";
+
+        if (!valid) {
+          help.textContent = "That word was not found.";
+          return;
+        }
+
+        showCustomLinkModal(buildCustomPuzzleUrl(word));
+      });
+
+      form.append(label, input, help, submit);
+      modalBody.appendChild(form);
+      setModalActions([{ label: "Close", onClick: closeModal }]);
+
+      setTimeout(() => input.focus(), 50);
+    }
+
+    function showCustomLinkModal(link) {
+      openModal("Custom Link");
+
+      const note = document.createElement("p");
+      note.textContent = "Send this link to your friends.";
+
+      const textarea = document.createElement("textarea");
+      textarea.className = "copy-box custom-link";
+      textarea.value = link;
+      textarea.setAttribute("readonly", "readonly");
+
+      modalBody.append(note, textarea);
+      textarea.select();
+
+      setModalActions([
+        {
+          label: "Copy Link",
+          primary: true,
+          onClick: async () => {
+            try {
+              await navigator.clipboard.writeText(link);
+              showToast("Link copied");
+            } catch (error) {
+              textarea.select();
+              showToast("Select and copy");
+            }
+          }
+        },
+        { label: "Play It", onClick: () => { window.location.href = link; } },
+        { label: "Close", onClick: closeModal }
+      ]);
+    }
+
+    function showEndModal() {
+      const attempts = state.guesses.length;
+      const score = state.won ? `${attempts}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`;
+      openModal(state.won ? "You won" : "Game over");
+
+      const answer = document.createElement("div");
+      answer.className = "answer";
+      answer.textContent = secretWord;
+
+      const summary = document.createElement("p");
+      summary.textContent = state.won
+        ? `Solved in ${attempts} ${attempts === 1 ? "guess" : "guesses"}.`
+        : `Score: ${score}`;
+
+      const definition = document.createElement("p");
+      definition.className = "definition";
+      definition.textContent = "Loading dictionary definition...";
+
+      modalBody.append(answer, summary, definition);
+      appendStats(modalBody);
+
+      setModalActions([
+        { label: "Share", primary: true, onClick: shareResult },
+        { label: "New Puzzle", onClick: startNewPuzzle },
+        { label: "Close", onClick: closeModal }
+      ]);
+
+      fetchDefinition(secretWord).then((text) => {
+        definition.textContent = text || "Dictionary definition unavailable.";
+      });
+    }
+
+    function showStatsModal() {
+      openModal("Statistics");
+      appendStats(modalBody);
+      setModalActions([
+        { label: "Share", primary: true, onClick: shareResult },
+        { label: "New Puzzle", onClick: startNewPuzzle },
+        { label: "Close", onClick: closeModal }
+      ]);
+    }
+
+    function appendStats(container) {
+      const stats = getStats();
+      const winRate = stats.played ? Math.round((stats.wins / stats.played) * 100) : 0;
+      const statsGrid = document.createElement("div");
+      statsGrid.className = "stats-grid";
+
+      [
+        ["Played", stats.played],
+        ["Win %", winRate],
+        ["Streak", stats.currentStreak],
+        ["Max", stats.maxStreak]
+      ].forEach(([label, value]) => {
+        const stat = document.createElement("div");
+        stat.className = "stat";
+        stat.innerHTML = `<strong>${value}</strong><span>${label}</span>`;
+        statsGrid.appendChild(stat);
+      });
+
+      const distribution = document.createElement("div");
+      distribution.className = "distribution";
+      const maxCount = Math.max(1, ...Object.values(stats.distribution));
+
+      for (let guessCount = 1; guessCount <= MAX_GUESSES; guessCount += 1) {
+        const count = stats.distribution[guessCount] || 0;
+        const row = document.createElement("div");
+        row.className = "dist-row";
+
+        const label = document.createElement("span");
+        label.textContent = String(guessCount);
+
+        const track = document.createElement("div");
+        track.className = "dist-track";
+
+        const bar = document.createElement("div");
+        bar.className = "dist-bar";
+        bar.style.width = `${Math.max(8, (count / maxCount) * 100)}%`;
+        bar.textContent = String(count);
+
+        if (state.gameOver && state.won && state.guesses.length === guessCount) {
+          bar.classList.add("highlight");
+        }
+
+        track.appendChild(bar);
+        row.append(label, track);
+        distribution.appendChild(row);
+      }
+
+      container.append(statsGrid, distribution);
+    }
+
+    function setModalActions(actions) {
+      modalActions.innerHTML = "";
+
+      actions.forEach((action) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = action.label;
+
+        if (action.primary) {
+          button.classList.add("primary");
+        }
+
+        button.addEventListener("click", action.onClick);
+        modalActions.appendChild(button);
+      });
+    }
+
+    function getStats() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(statsKey));
+        const distribution = {};
+
+        for (let guessCount = 1; guessCount <= MAX_GUESSES; guessCount += 1) {
+          distribution[guessCount] = Number(saved && saved.distribution && saved.distribution[guessCount]) || 0;
+        }
+
+        return {
+          played: Number(saved && saved.played) || 0,
+          wins: Number(saved && saved.wins) || 0,
+          currentStreak: Number(saved && saved.currentStreak) || 0,
+          maxStreak: Number(saved && saved.maxStreak) || 0,
+          distribution
+        };
+      } catch (error) {
+        return {
+          played: 0,
+          wins: 0,
+          currentStreak: 0,
+          maxStreak: 0,
+          distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
+        };
+      }
+    }
+
+    function saveStats(stats) {
+      localStorage.setItem(statsKey, JSON.stringify(stats));
+    }
+
+    function recordStats() {
+      if (state.recordedStats) return;
+
+      const stats = getStats();
+      stats.played += 1;
+
+      if (state.won) {
+        stats.wins += 1;
+        stats.currentStreak += 1;
+        stats.maxStreak = Math.max(stats.maxStreak, stats.currentStreak);
+        stats.distribution[state.guesses.length] = (stats.distribution[state.guesses.length] || 0) + 1;
+      } else {
+        stats.currentStreak = 0;
+      }
+
+      state.recordedStats = true;
+      saveStats(stats);
+    }
+
+    async function shareResult() {
+      const text = state.gameOver ? buildShareText() : `Play this puzzle: ${buildPuzzleUrl()}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ text });
+          showToast("Shared");
+          return;
+        } catch (error) {
+          if (error && error.name === "AbortError") return;
+        }
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Copied to clipboard");
+      } catch (error) {
+        showCopyModal(text);
+      }
+    }
+
+    function buildShareText() {
+      const score = state.won ? `${state.guesses.length}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`;
+      const grid = state.evaluations
+        .map((row) => row.map((status) => SHARE_GLYPHS[status]).join(""))
+        .join("\n");
+
+      return `Wordle Clone ${puzzleLabel} ${score}\n${grid}\n${buildPuzzleUrl()}`;
+    }
+
+    function buildPuzzleUrl() {
+      const url = new URL(window.location.href);
+      if (customWord) {
+        url.searchParams.delete("day");
+        url.searchParams.set("word", encodeCustomWord(customWord));
+      } else {
+        url.searchParams.delete("word");
+        url.searchParams.set("day", String(puzzleId));
+      }
+      url.hash = "";
+      return url.toString();
+    }
+
+    function buildCustomPuzzleUrl(word) {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.searchParams.set("word", encodeCustomWord(word));
+      url.hash = "";
+      return url.toString();
+    }
+
+    function showCopyModal(text) {
+      openModal("Copy Results");
+
+      const textarea = document.createElement("textarea");
+      textarea.className = "copy-box";
+      textarea.value = text;
+      textarea.setAttribute("readonly", "readonly");
+      modalBody.appendChild(textarea);
+      textarea.select();
+
+      setModalActions([
+        { label: "Close", primary: true, onClick: closeModal }
+      ]);
+    }
+
+    function startNewPuzzle() {
+      const nextPuzzleId = Math.floor(Math.random() * 900000) + 100000;
+      const url = new URL(window.location.href);
+      url.searchParams.delete("word");
+      url.searchParams.set("day", String(nextPuzzleId));
+      url.hash = "";
+      window.location.href = url.toString();
+    }
+  </script>
+</body>
+</html>
