@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wordle Admin History</title>
+  <style>
+    :root {
+      --bg: #121213;
+      --surface: #1a1a1b;
+      --surface-2: #202124;
+      --text: #f8f8f8;
+      --muted: #d7dadc;
+      --border: #3a3a3c;
+      --correct: #538d4e;
+      --present: #b59f3b;
+      --danger: #bd4b4b;
+      --focus: #85c0f9;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      background: #151516;
+    }
+
+    .header-inner,
+    main {
+      width: min(1180px, calc(100vw - 28px));
+      margin: 0 auto;
+    }
+
+    .header-inner {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    a,
+    button {
+      color: var(--text);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .button,
+    button {
+      border: 0;
+      border-radius: 4px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-weight: 800;
+      padding: 10px 12px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .button.primary,
+    button.primary {
+      background: var(--correct);
+    }
+
+    main {
+      padding: 22px 0 40px;
+    }
+
+    .status {
+      color: var(--muted);
+      min-height: 24px;
+      margin: 0 0 16px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 160px 170px 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    select,
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #0f0f10;
+      color: var(--text);
+      padding: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .stat,
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .stat {
+      padding: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      overflow: hidden;
+      margin-top: 16px;
+    }
+
+    .panel h2 {
+      margin: 0;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 18px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 780px;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    td.answer {
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      min-width: 58px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+      background: var(--surface-2);
+    }
+
+    .pill.win {
+      background: var(--correct);
+    }
+
+    .pill.loss {
+      background: var(--danger);
+    }
+
+    .empty {
+      padding: 26px 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .header-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+
+      .filters,
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>History</h1>
+      <div class="header-actions">
+        <a class="button" href="index.html">Game</a>
+        <button id="refreshButton" class="primary" type="button">Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <p id="status" class="status">Loading history...</p>
+
+    <div class="filters">
+      <select id="typeFilter" aria-label="Game type">
+        <option value="all">All games</option>
+        <option value="daily">Daily only</option>
+        <option value="custom">Custom only</option>
+      </select>
+      <input id="dateFilter" type="date" aria-label="Date" />
+      <input id="searchFilter" type="search" placeholder="Search puzzle or answer" aria-label="Search" />
+    </div>
+
+    <section id="statsGrid" class="stats-grid" aria-label="Summary stats"></section>
+
+    <section class="panel">
+      <h2>By Puzzle</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Puzzle</th>
+              <th>Type</th>
+              <th>Answer</th>
+              <th>Plays</th>
+              <th>Win %</th>
+              <th>Avg Tries</th>
+              <th>Last Played</th>
+            </tr>
+          </thead>
+          <tbody id="puzzleBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Play History</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Puzzle</th>
+              <th>Type</th>
+              <th>Answer</th>
+              <th>Result</th>
+              <th>Tries</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script src="shared-history.js"></script>
+  <script>
+    "use strict";
+
+    const localHistoryKey = "wordle-clone:local-history";
+    const statusEl = document.getElementById("status");
+    const statsGrid = document.getElementById("statsGrid");
+    const puzzleBody = document.getElementById("puzzleBody");
+    const historyBody = document.getElementById("historyBody");
+    const refreshButton = document.getElementById("refreshButton");
+    const typeFilter = document.getElementById("typeFilter");
+    const dateFilter = document.getElementById("dateFilter");
+    const searchFilter = document.getElementById("searchFilter");
+
+    let attempts = [];
+
+    refreshButton.addEventListener("click", loadHistory);
+    typeFilter.addEventListener("change", render);
+    dateFilter.addEventListener("change", render);
+    searchFilter.addEventListener("input", render);
+
+    loadHistory();
+
+    async function loadHistory() {
+      statusEl.textContent = "Loading history...";
+
+      const localAttempts = getLocalAttempts();
+      let remoteAttempts = [];
+
+      if (window.WordleBackend && window.WordleBackend.isEnabled()) {
+        try {
+          remoteAttempts = await window.WordleBackend.fetchAttempts(2000);
+          statusEl.textContent = `Loaded ${remoteAttempts.length} shared plays.`;
+        } catch (error) {
+          console.warn("Unable to load shared history.", error);
+          statusEl.textContent = `Could not load shared history: ${error.message}. Showing this browser's local history.`;
+        }
+      } else {
+        statusEl.textContent = "Supabase is not configured yet. Showing this browser's local history only.";
+      }
+
+      attempts = mergeAttempts(remoteAttempts, localAttempts).map(normalizeAttempt);
+      render();
+    }
+
+    function getLocalAttempts() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(localHistoryKey));
+        return Array.isArray(saved) ? saved : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function mergeAttempts(remoteAttempts, localAttempts) {
+      const seen = new Set();
+      const merged = [];
+
+      [...remoteAttempts, ...localAttempts].forEach((attempt) => {
+        const key = attempt.id || `${attempt.created_at}|${attempt.puzzle_key}|${attempt.player_id || ""}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        merged.push(attempt);
+      });
+
+      return merged;
+    }
+
+    function normalizeAttempt(attempt) {
+      return {
+        ...attempt,
+        puzzle_kind: attempt.puzzle_kind || "daily",
+        puzzle_label: attempt.puzzle_label || attempt.puzzle_key || "Unknown",
+        answer: attempt.answer || "",
+        won: Boolean(attempt.won),
+        guesses_used: Number(attempt.guesses_used) || 0,
+        created_at: attempt.created_at || new Date().toISOString()
+      };
+    }
+
+    function getFilteredAttempts() {
+      const type = typeFilter.value;
+      const date = dateFilter.value;
+      const search = searchFilter.value.trim().toLowerCase();
+
+      return attempts.filter((attempt) => {
+        if (type !== "all" && attempt.puzzle_kind !== type) return false;
+        if (date && toDateInputValue(attempt.created_at) !== date) return false;
+        if (search) {
+          const haystack = `${attempt.puzzle_label} ${attempt.answer} ${attempt.puzzle_key}`.toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        return true;
+      });
+    }
+
+    function render() {
+      const filtered = getFilteredAttempts().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      renderStats(filtered);
+      renderPuzzleTable(filtered);
+      renderHistoryTable(filtered);
+    }
+
+    function renderStats(rows) {
+      const wins = rows.filter((attempt) => attempt.won).length;
+      const daily = rows.filter((attempt) => attempt.puzzle_kind === "daily").length;
+      const custom = rows.filter((attempt) => attempt.puzzle_kind === "custom").length;
+      const avg = wins ? average(rows.filter((attempt) => attempt.won).map((attempt) => attempt.guesses_used)) : 0;
+
+      statsGrid.innerHTML = "";
+      [
+        ["Total Plays", rows.length],
+        ["Wins", wins],
+        ["Win %", rows.length ? `${Math.round((wins / rows.length) * 100)}%` : "0%"],
+        ["Avg Tries", avg ? avg.toFixed(1) : "-"],
+        ["Daily / Custom", `${daily} / ${custom}`]
+      ].forEach(([label, value]) => {
+        const stat = document.createElement("div");
+        stat.className = "stat";
+        stat.innerHTML = `<strong>${value}</strong><span>${label}</span>`;
+        statsGrid.appendChild(stat);
+      });
+    }
+
+    function renderPuzzleTable(rows) {
+      const groups = new Map();
+
+      rows.forEach((attempt) => {
+        const key = attempt.puzzle_key || attempt.puzzle_label;
+        const group = groups.get(key) || {
+          label: attempt.puzzle_label,
+          kind: attempt.puzzle_kind,
+          answer: attempt.answer,
+          plays: 0,
+          wins: 0,
+          tries: [],
+          lastPlayed: attempt.created_at
+        };
+
+        group.plays += 1;
+        if (attempt.won) {
+          group.wins += 1;
+          group.tries.push(attempt.guesses_used);
+        }
+        if (new Date(attempt.created_at) > new Date(group.lastPlayed)) {
+          group.lastPlayed = attempt.created_at;
+        }
+        groups.set(key, group);
+      });
+
+      const groupRows = [...groups.values()].sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
+      puzzleBody.innerHTML = "";
+
+      if (!groupRows.length) {
+        puzzleBody.innerHTML = `<tr><td class="empty" colspan="7">No plays match these filters.</td></tr>`;
+        return;
+      }
+
+      groupRows.forEach((group) => {
+        const row = document.createElement("tr");
+        const winRate = group.plays ? Math.round((group.wins / group.plays) * 100) : 0;
+        const avgTries = group.tries.length ? average(group.tries).toFixed(1) : "-";
+        row.innerHTML = `
+          <td>${escapeHtml(group.label)}</td>
+          <td>${escapeHtml(group.kind)}</td>
+          <td class="answer">${escapeHtml(group.answer)}</td>
+          <td>${group.plays}</td>
+          <td>${winRate}%</td>
+          <td>${avgTries}</td>
+          <td>${formatDateTime(group.lastPlayed)}</td>
+        `;
+        puzzleBody.appendChild(row);
+      });
+    }
+
+    function renderHistoryTable(rows) {
+      historyBody.innerHTML = "";
+
+      if (!rows.length) {
+        historyBody.innerHTML = `<tr><td class="empty" colspan="6">No plays match these filters.</td></tr>`;
+        return;
+      }
+
+      rows.forEach((attempt) => {
+        const row = document.createElement("tr");
+        const resultClass = attempt.won ? "win" : "loss";
+        const resultLabel = attempt.won ? "Won" : "Lost";
+        row.innerHTML = `
+          <td>${formatDateTime(attempt.created_at)}</td>
+          <td>${escapeHtml(attempt.puzzle_label)}</td>
+          <td>${escapeHtml(attempt.puzzle_kind)}</td>
+          <td class="answer">${escapeHtml(attempt.answer)}</td>
+          <td><span class="pill ${resultClass}">${resultLabel}</span></td>
+          <td>${attempt.won ? attempt.guesses_used : "X"}/6</td>
+        `;
+        historyBody.appendChild(row);
+      });
+    }
+
+    function average(values) {
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function formatDateTime(value) {
+      return new Date(value).toLocaleString([], {
+        dateStyle: "medium",
+        timeStyle: "short"
+      });
+    }
+
+    function toDateInputValue(value) {
+      const date = new Date(value);
+      const offset = date.getTimezoneOffset();
+      const local = new Date(date.getTime() - offset * 60000);
+      return local.toISOString().slice(0, 10);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

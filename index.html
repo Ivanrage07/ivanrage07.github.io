@@ -607,6 +607,8 @@
     </div>
   </div>
 
+  <script src="supabase-config.js"></script>
+  <script src="shared-history.js"></script>
   <script>
     "use strict";
 
@@ -685,17 +687,21 @@
     const STATUS_PRIORITY = Object.freeze({ absent: 1, present: 2, correct: 3 });
     const SHARE_GLYPHS = Object.freeze({ correct: "🟩", present: "🟨", absent: "⬛" });
     const VALID_WORDS = new Set([...ANSWERS, ...EXTRA_GUESSES]);
-    const customWord = getCustomWordFromUrl();
+    let customWord = getCustomWordFromUrl();
+    const remotePuzzleId = getRemotePuzzleIdFromUrl();
+    let remotePuzzle = null;
     const puzzleId = getPuzzleId();
-    const puzzleLabel = customWord ? "Custom" : `#${puzzleId}`;
-    const puzzleKey = customWord ? `custom:${encodeCustomWord(customWord)}` : `daily:${puzzleId}`;
-    const secretWord = customWord || ANSWERS[positiveModulo(puzzleId, ANSWERS.length)];
-    const stateKey = `wordle-clone:${puzzleKey}`;
+    let puzzleLabel = "";
+    let puzzleKey = "";
+    let secretWord = "";
+    let stateKey = "";
     const statsKey = "wordle-clone:stats";
+    const localHistoryKey = "wordle-clone:local-history";
+    const playerIdKey = "wordle-clone:player-id";
     const dictionaryCache = new Map();
     const definitionCache = new Map();
 
-    let state = loadState();
+    let state = null;
     let isChecking = false;
     let isRevealing = false;
 
@@ -712,25 +718,69 @@
     const shareButton = document.getElementById("shareButton");
     const puzzleIdEl = document.getElementById("puzzleId");
 
-    puzzleIdEl.textContent = puzzleLabel;
-    buildBoard();
-    buildKeyboard();
-    renderBoard();
-    renderKeyboard();
+    startGame();
 
-    if (state.gameOver && !state.recordedStats) {
-      recordStats();
-      saveState();
+    async function startGame() {
+      if (remotePuzzleId) {
+        await loadRemoteCustomPuzzle(remotePuzzleId);
+      }
+
+      configurePuzzle();
+      state = loadState();
+      puzzleIdEl.textContent = puzzleLabel;
+      buildBoard();
+      buildKeyboard();
+      renderBoard();
+      renderKeyboard();
+
+      if (remotePuzzleId && !customWord) {
+        showToast("Custom puzzle unavailable");
+      }
+
+      if (state.gameOver && !state.recordedStats) {
+        recordStats();
+        saveState();
+      }
+
+      if (state.gameOver && !state.recordedHistory) {
+        queueHistoryLog();
+      }
+
+      document.addEventListener("keydown", onPhysicalKey);
+      modalBackdrop.addEventListener("click", (event) => {
+        if (event.target === modalBackdrop) closeModal();
+      });
+      modalClose.addEventListener("click", closeModal);
+      customButton.addEventListener("click", showCustomModal);
+      statsButton.addEventListener("click", showStatsModal);
+      shareButton.addEventListener("click", shareResult);
     }
 
-    document.addEventListener("keydown", onPhysicalKey);
-    modalBackdrop.addEventListener("click", (event) => {
-      if (event.target === modalBackdrop) closeModal();
-    });
-    modalClose.addEventListener("click", closeModal);
-    customButton.addEventListener("click", showCustomModal);
-    statsButton.addEventListener("click", showStatsModal);
-    shareButton.addEventListener("click", shareResult);
+    async function loadRemoteCustomPuzzle(id) {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        return;
+      }
+
+      try {
+        const puzzle = await window.WordleBackend.getCustomPuzzle(id);
+
+        if (puzzle && /^[a-z]{5}$/.test(puzzle.answer)) {
+          remotePuzzle = puzzle;
+          customWord = puzzle.answer;
+        }
+      } catch (error) {
+        console.warn("Unable to load custom puzzle.", error);
+      }
+    }
+
+    function configurePuzzle() {
+      puzzleLabel = customWord ? "Custom" : `#${puzzleId}`;
+      puzzleKey = customWord
+        ? `custom:${remotePuzzle ? remotePuzzle.id : encodeCustomWord(customWord)}`
+        : `daily:${puzzleId}`;
+      secretWord = customWord || ANSWERS[positiveModulo(puzzleId, ANSWERS.length)];
+      stateKey = `wordle-clone:${puzzleKey}`;
+    }
 
     function positiveModulo(value, size) {
       return ((value % size) + size) % size;
@@ -757,6 +807,12 @@
       return /^[a-z]{5}$/.test(decoded) ? decoded : "";
     }
 
+    function getRemotePuzzleIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const rawPuzzle = params.get("puzzle");
+      return rawPuzzle ? rawPuzzle.replace(/[^a-f0-9-]/gi, "").slice(0, 60) : "";
+    }
+
     function encodeCustomWord(word) {
       return btoa(word.toLowerCase())
         .replace(/\+/g, "-")
@@ -781,7 +837,8 @@
         currentGuess: "",
         gameOver: false,
         won: false,
-        recordedStats: false
+        recordedStats: false,
+        recordedHistory: false
       };
     }
 
@@ -822,7 +879,8 @@
         currentGuess,
         gameOver,
         won: Boolean(saved.won) || guesses.includes(secretWord),
-        recordedStats: Boolean(saved.recordedStats)
+        recordedStats: Boolean(saved.recordedStats),
+        recordedHistory: Boolean(saved.recordedHistory)
       };
     }
 
@@ -1007,6 +1065,7 @@
           state.won = won;
           recordStats();
           saveState();
+          queueHistoryLog();
 
           const messages = ["Genius", "Magnificent", "Impressive", "Splendid", "Great", "Phew"];
           showToast(won ? messages[rowIndex] : secretWord.toUpperCase());
@@ -1243,7 +1302,8 @@
           return;
         }
 
-        showCustomLinkModal(buildCustomPuzzleUrl(word));
+        const link = await createCustomPuzzleLink(word);
+        showCustomLinkModal(link);
       });
 
       form.append(label, input, help, submit);
@@ -1445,6 +1505,73 @@
       saveStats(stats);
     }
 
+    function queueHistoryLog() {
+      if (state.recordedHistory) return;
+
+      const payload = buildAttemptPayload();
+      saveLocalAttempt(payload);
+
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        state.recordedHistory = true;
+        saveState();
+        return;
+      }
+
+      window.WordleBackend.logAttempt(payload)
+        .then(() => {
+          state.recordedHistory = true;
+          saveState();
+        })
+        .catch((error) => {
+          console.warn("Unable to save shared history.", error);
+        });
+    }
+
+    function buildAttemptPayload() {
+      return {
+        puzzle_key: puzzleKey,
+        puzzle_kind: customWord ? "custom" : "daily",
+        puzzle_label: puzzleLabel,
+        answer: secretWord,
+        won: state.won,
+        guesses_used: state.guesses.length,
+        max_guesses: MAX_GUESSES,
+        guesses: state.guesses,
+        player_id: getPlayerId(),
+        created_at: new Date().toISOString()
+      };
+    }
+
+    function getPlayerId() {
+      const saved = localStorage.getItem(playerIdKey);
+      if (saved) return saved;
+
+      const id = window.crypto && window.crypto.randomUUID
+        ? window.crypto.randomUUID()
+        : `player-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      localStorage.setItem(playerIdKey, id);
+      return id;
+    }
+
+    function saveLocalAttempt(payload) {
+      const attempts = getLocalAttempts();
+      const exists = attempts.some((attempt) => attempt.puzzle_key === payload.puzzle_key && attempt.player_id === payload.player_id);
+
+      if (!exists) {
+        attempts.unshift(payload);
+        localStorage.setItem(localHistoryKey, JSON.stringify(attempts.slice(0, 500)));
+      }
+    }
+
+    function getLocalAttempts() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(localHistoryKey));
+        return Array.isArray(saved) ? saved : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
     async function shareResult() {
       const text = state.gameOver ? buildShareText() : `Play this puzzle: ${buildPuzzleUrl()}`;
 
@@ -1479,9 +1606,16 @@
       const url = new URL(window.location.href);
       if (customWord) {
         url.searchParams.delete("day");
-        url.searchParams.set("word", encodeCustomWord(customWord));
+        if (remotePuzzle) {
+          url.searchParams.delete("word");
+          url.searchParams.set("puzzle", remotePuzzle.id);
+        } else {
+          url.searchParams.delete("puzzle");
+          url.searchParams.set("word", encodeCustomWord(customWord));
+        }
       } else {
         url.searchParams.delete("word");
+        url.searchParams.delete("puzzle");
         url.searchParams.set("day", String(puzzleId));
       }
       url.hash = "";
@@ -1492,6 +1626,34 @@
       const url = new URL(window.location.href);
       url.search = "";
       url.searchParams.set("word", encodeCustomWord(word));
+      url.hash = "";
+      return url.toString();
+    }
+
+    async function createCustomPuzzleLink(word) {
+      if (window.WordleBackend && window.WordleBackend.isEnabled()) {
+        try {
+          const puzzle = await window.WordleBackend.createCustomPuzzle({
+            answer: word,
+            answerCode: encodeCustomWord(word)
+          });
+
+          if (puzzle && puzzle.id) {
+            return buildRemotePuzzleUrl(puzzle.id);
+          }
+        } catch (error) {
+          console.warn("Unable to create shared custom puzzle.", error);
+          showToast("Using local link");
+        }
+      }
+
+      return buildCustomPuzzleUrl(word);
+    }
+
+    function buildRemotePuzzleUrl(id) {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.searchParams.set("puzzle", id);
       url.hash = "";
       return url.toString();
     }
@@ -1515,6 +1677,7 @@
       const nextPuzzleId = Math.floor(Math.random() * 900000) + 100000;
       const url = new URL(window.location.href);
       url.searchParams.delete("word");
+      url.searchParams.delete("puzzle");
       url.searchParams.set("day", String(nextPuzzleId));
       url.hash = "";
       window.location.href = url.toString();
