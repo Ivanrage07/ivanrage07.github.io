@@ -44,6 +44,10 @@
       overflow: hidden;
     }
 
+    body.home {
+      overflow: auto;
+    }
+
     button,
     input,
     textarea {
@@ -149,6 +153,106 @@
       align-items: center;
       justify-content: space-between;
       padding: 18px 8px 8px;
+    }
+
+    body.home main {
+      display: none;
+    }
+
+    .home-screen {
+      width: min(1040px, calc(100vw - 24px));
+      flex: 1;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 0 34px;
+    }
+
+    body.home .home-screen {
+      display: flex;
+    }
+
+    .home-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .home-panel {
+      min-height: 390px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .home-panel h2 {
+      margin: 0 0 12px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .home-panel p {
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0;
+      max-width: 30rem;
+    }
+
+    .mini-board {
+      display: grid;
+      grid-template-columns: repeat(5, 38px);
+      gap: 5px;
+      margin: 24px 0;
+    }
+
+    .mini-tile {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .mini-tile.correct {
+      background: var(--correct);
+      border-color: var(--correct);
+    }
+
+    .mini-tile.present {
+      background: var(--present);
+      border-color: var(--present);
+    }
+
+    .mini-tile.absent {
+      background: var(--absent);
+      border-color: var(--absent);
+    }
+
+    .home-panel button {
+      width: fit-content;
+      min-width: 150px;
+      border: 0;
+      border-radius: 4px;
+      padding: 13px 16px;
+      background: var(--correct);
+      color: var(--text);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .home-panel.casual button {
+      background: var(--present);
     }
 
     #board {
@@ -530,6 +634,24 @@
         min-width: 34px;
       }
 
+      .home-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .home-panel {
+        min-height: 310px;
+        padding: 20px;
+      }
+
+      .mini-board {
+        grid-template-columns: repeat(5, 31px);
+      }
+
+      .mini-tile {
+        width: 31px;
+        height: 31px;
+      }
+
       main {
         padding-top: 12px;
       }
@@ -592,6 +714,40 @@
   </header>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <section id="homeScreen" class="home-screen" aria-label="Choose game mode">
+    <div class="home-grid">
+      <article class="home-panel daily">
+        <div>
+          <h2>Daily Wordle</h2>
+          <p>One shared puzzle for the day. Everyone gets the same word.</p>
+          <div class="mini-board" aria-hidden="true">
+            <span class="mini-tile correct">D</span>
+            <span class="mini-tile present">A</span>
+            <span class="mini-tile absent">I</span>
+            <span class="mini-tile correct">L</span>
+            <span class="mini-tile present">Y</span>
+          </div>
+        </div>
+        <button id="dailyModeButton" type="button">Play Daily</button>
+      </article>
+
+      <article class="home-panel casual">
+        <div>
+          <h2>Casual Play</h2>
+          <p>Unlimited random puzzles for messing around, warming up, or replaying without waiting for tomorrow.</p>
+          <div class="mini-board" aria-hidden="true">
+            <span class="mini-tile present">P</span>
+            <span class="mini-tile correct">L</span>
+            <span class="mini-tile correct">A</span>
+            <span class="mini-tile absent">Y</span>
+            <span class="mini-tile present">S</span>
+          </div>
+        </div>
+        <button id="casualModeButton" type="button">Play Casual</button>
+      </article>
+    </div>
+  </section>
 
   <main>
     <div id="board" aria-label="Game board"></div>
@@ -687,8 +843,10 @@
     const STATUS_PRIORITY = Object.freeze({ absent: 1, present: 2, correct: 3 });
     const SHARE_GLYPHS = Object.freeze({ correct: "🟩", present: "🟨", absent: "⬛" });
     const VALID_WORDS = new Set([...ANSWERS, ...EXTRA_GUESSES]);
+    const urlParams = new URLSearchParams(window.location.search);
     let customWord = getCustomWordFromUrl();
     const remotePuzzleId = getRemotePuzzleIdFromUrl();
+    const playMode = getPlayMode();
     let remotePuzzle = null;
     const puzzleId = getPuzzleId();
     let puzzleLabel = "";
@@ -705,6 +863,9 @@
     let isChecking = false;
     let isRevealing = false;
 
+    const homeScreen = document.getElementById("homeScreen");
+    const dailyModeButton = document.getElementById("dailyModeButton");
+    const casualModeButton = document.getElementById("casualModeButton");
     const boardEl = document.getElementById("board");
     const keyboardEl = document.getElementById("keyboard");
     const toastEl = document.getElementById("toast");
@@ -721,6 +882,14 @@
     startGame();
 
     async function startGame() {
+      dailyModeButton.addEventListener("click", startDailyPuzzle);
+      casualModeButton.addEventListener("click", startCasualPuzzle);
+
+      if (shouldShowLauncher()) {
+        showLauncher();
+        return;
+      }
+
       if (remotePuzzleId) {
         await loadRemoteCustomPuzzle(remotePuzzleId);
       }
@@ -756,6 +925,16 @@
       shareButton.addEventListener("click", shareResult);
     }
 
+    function shouldShowLauncher() {
+      return !urlParams.has("day") && !urlParams.has("word") && !urlParams.has("puzzle") && !urlParams.has("mode");
+    }
+
+    function showLauncher() {
+      document.body.classList.add("home");
+      homeScreen.hidden = false;
+      puzzleIdEl.textContent = "Choose";
+    }
+
     async function loadRemoteCustomPuzzle(id) {
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
         return;
@@ -774,10 +953,10 @@
     }
 
     function configurePuzzle() {
-      puzzleLabel = customWord ? "Custom" : `#${puzzleId}`;
+      puzzleLabel = customWord ? "Custom" : playMode === "casual" ? "Casual" : `#${puzzleId}`;
       puzzleKey = customWord
         ? `custom:${remotePuzzle ? remotePuzzle.id : encodeCustomWord(customWord)}`
-        : `daily:${puzzleId}`;
+        : `${playMode}:${puzzleId}`;
       secretWord = customWord || ANSWERS[positiveModulo(puzzleId, ANSWERS.length)];
       stateKey = `wordle-clone:${puzzleKey}`;
     }
@@ -787,8 +966,7 @@
     }
 
     function getPuzzleId() {
-      const params = new URLSearchParams(window.location.search);
-      const rawDay = params.get("day");
+      const rawDay = urlParams.get("day");
       const requestedDay = rawDay === null ? NaN : Number(rawDay);
 
       if (Number.isInteger(requestedDay) && requestedDay >= 0) {
@@ -798,9 +976,12 @@
       return Math.floor((Date.now() - BASE_DAY) / DAY_MS);
     }
 
+    function getPlayMode() {
+      return urlParams.get("mode") === "casual" ? "casual" : "daily";
+    }
+
     function getCustomWordFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      const rawWord = params.get("word");
+      const rawWord = urlParams.get("word");
       if (!rawWord) return "";
 
       const decoded = decodeCustomWord(rawWord);
@@ -808,8 +989,7 @@
     }
 
     function getRemotePuzzleIdFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      const rawPuzzle = params.get("puzzle");
+      const rawPuzzle = urlParams.get("puzzle");
       return rawPuzzle ? rawPuzzle.replace(/[^a-f0-9-]/gi, "").slice(0, 60) : "";
     }
 
@@ -1369,6 +1549,7 @@
 
       setModalActions([
         { label: "Share", primary: true, onClick: shareResult },
+        { label: "Play Again", onClick: replayCurrentPuzzle },
         { label: "New Puzzle", onClick: startNewPuzzle },
         { label: "Close", onClick: closeModal }
       ]);
@@ -1383,6 +1564,7 @@
       appendStats(modalBody);
       setModalActions([
         { label: "Share", primary: true, onClick: shareResult },
+        ...(state.gameOver ? [{ label: "Play Again", onClick: replayCurrentPuzzle }] : []),
         { label: "New Puzzle", onClick: startNewPuzzle },
         { label: "Close", onClick: closeModal }
       ]);
@@ -1530,7 +1712,7 @@
     function buildAttemptPayload() {
       return {
         puzzle_key: puzzleKey,
-        puzzle_kind: customWord ? "custom" : "daily",
+        puzzle_kind: customWord ? "custom" : playMode,
         puzzle_label: puzzleLabel,
         answer: secretWord,
         won: state.won,
@@ -1555,12 +1737,8 @@
 
     function saveLocalAttempt(payload) {
       const attempts = getLocalAttempts();
-      const exists = attempts.some((attempt) => attempt.puzzle_key === payload.puzzle_key && attempt.player_id === payload.player_id);
-
-      if (!exists) {
-        attempts.unshift(payload);
-        localStorage.setItem(localHistoryKey, JSON.stringify(attempts.slice(0, 500)));
-      }
+      attempts.unshift(payload);
+      localStorage.setItem(localHistoryKey, JSON.stringify(attempts.slice(0, 500)));
     }
 
     function getLocalAttempts() {
@@ -1617,6 +1795,11 @@
         url.searchParams.delete("word");
         url.searchParams.delete("puzzle");
         url.searchParams.set("day", String(puzzleId));
+        if (playMode === "casual") {
+          url.searchParams.set("mode", "casual");
+        } else {
+          url.searchParams.delete("mode");
+        }
       }
       url.hash = "";
       return url.toString();
@@ -1674,11 +1857,39 @@
     }
 
     function startNewPuzzle() {
+      if (playMode === "casual") {
+        startCasualPuzzle();
+        return;
+      }
+
       const nextPuzzleId = Math.floor(Math.random() * 900000) + 100000;
       const url = new URL(window.location.href);
       url.searchParams.delete("word");
       url.searchParams.delete("puzzle");
+      url.searchParams.delete("mode");
       url.searchParams.set("day", String(nextPuzzleId));
+      url.hash = "";
+      window.location.href = url.toString();
+    }
+
+    function replayCurrentPuzzle() {
+      localStorage.removeItem(stateKey);
+      window.location.reload();
+    }
+
+    function startDailyPuzzle() {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.searchParams.set("day", String(Math.floor((Date.now() - BASE_DAY) / DAY_MS)));
+      url.hash = "";
+      window.location.href = url.toString();
+    }
+
+    function startCasualPuzzle() {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.searchParams.set("mode", "casual");
+      url.searchParams.set("day", String(Math.floor(Math.random() * 900000) + 100000));
       url.hash = "";
       window.location.href = url.toString();
     }
