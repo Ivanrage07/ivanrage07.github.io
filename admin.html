@@ -37,6 +37,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
@@ -246,6 +250,38 @@
       text-align: center;
     }
 
+    .auth-panel {
+      width: min(420px, 100%);
+      margin: 40px auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 22px;
+    }
+
+    .auth-panel h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+
+    .auth-panel p {
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0 0 16px;
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .auth-error {
+      color: #ffb3b3;
+      min-height: 20px;
+      margin: 0;
+      font-size: 13px;
+    }
+
     .site-credit {
       color: var(--muted);
       font-size: 12px;
@@ -279,64 +315,78 @@
       <div class="header-actions">
         <a class="button" href="index.html">Game</a>
         <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
-        <button id="refreshButton" class="primary" type="button">Refresh</button>
+        <button id="refreshButton" class="primary" type="button" hidden>Refresh</button>
+        <button id="signOutButton" type="button" hidden>Sign Out</button>
       </div>
     </div>
   </header>
 
   <main>
-    <p id="status" class="status">Loading history...</p>
-
-    <div class="filters">
-      <select id="typeFilter" aria-label="Game type">
-        <option value="all">All games</option>
-        <option value="daily">Daily only</option>
-        <option value="casual">Casual only</option>
-        <option value="custom">Custom only</option>
-      </select>
-      <input id="dateFilter" type="date" aria-label="Date" />
-      <input id="searchFilter" type="search" placeholder="Search puzzle or answer" aria-label="Search" />
-    </div>
-
-    <section id="statsGrid" class="stats-grid" aria-label="Summary stats"></section>
-
-    <section class="panel">
-      <h2>By Puzzle</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Puzzle</th>
-              <th>Type</th>
-              <th>Answer</th>
-              <th>Plays</th>
-              <th>Win %</th>
-              <th>Avg Tries</th>
-              <th>Last Played</th>
-            </tr>
-          </thead>
-          <tbody id="puzzleBody"></tbody>
-        </table>
-      </div>
+    <section id="authPanel" class="auth-panel" hidden>
+      <h2>Admin Login</h2>
+      <p>Sign in with the Supabase Auth user you created.</p>
+      <form id="authForm" class="auth-form">
+        <input id="emailInput" type="email" autocomplete="email" placeholder="Email" required />
+        <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" required />
+        <button id="loginButton" class="primary" type="submit">Sign In</button>
+        <p id="authError" class="auth-error" role="alert"></p>
+      </form>
     </section>
 
-    <section class="panel">
-      <h2>Play History</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Date & Time</th>
-              <th>Puzzle</th>
-              <th>Type</th>
-              <th>Answer</th>
-              <th>Result</th>
-              <th>Tries</th>
-            </tr>
-          </thead>
-          <tbody id="historyBody"></tbody>
-        </table>
+    <section id="dashboard" hidden>
+      <p id="status" class="status">Loading history...</p>
+
+      <div class="filters">
+        <select id="typeFilter" aria-label="Game type">
+          <option value="all">All games</option>
+          <option value="daily">Daily only</option>
+          <option value="casual">Casual only</option>
+          <option value="custom">Custom only</option>
+        </select>
+        <input id="dateFilter" type="date" aria-label="Date" />
+        <input id="searchFilter" type="search" placeholder="Search puzzle or answer" aria-label="Search" />
       </div>
+
+      <section id="statsGrid" class="stats-grid" aria-label="Summary stats"></section>
+
+      <section class="panel">
+        <h2>By Puzzle</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Puzzle</th>
+                <th>Type</th>
+                <th>Answer</th>
+                <th>Plays</th>
+                <th>Win %</th>
+                <th>Avg Tries</th>
+                <th>Last Played</th>
+              </tr>
+            </thead>
+            <tbody id="puzzleBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Play History</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Puzzle</th>
+                <th>Type</th>
+                <th>Answer</th>
+                <th>Result</th>
+                <th>Tries</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -366,11 +416,19 @@
       "quest", "hinge", "union", "siren", "adore", "clean", "creep", "delta", "evoke", "flora"
     ];
     const statusEl = document.getElementById("status");
+    const authPanel = document.getElementById("authPanel");
+    const dashboard = document.getElementById("dashboard");
+    const authForm = document.getElementById("authForm");
+    const emailInput = document.getElementById("emailInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const loginButton = document.getElementById("loginButton");
+    const authError = document.getElementById("authError");
     const statsGrid = document.getElementById("statsGrid");
     const puzzleBody = document.getElementById("puzzleBody");
     const historyBody = document.getElementById("historyBody");
     const themeButton = document.getElementById("themeButton");
     const refreshButton = document.getElementById("refreshButton");
+    const signOutButton = document.getElementById("signOutButton");
     const typeFilter = document.getElementById("typeFilter");
     const dateFilter = document.getElementById("dateFilter");
     const searchFilter = document.getElementById("searchFilter");
@@ -378,13 +436,14 @@
     let attempts = [];
 
     initTheme();
+    initAuth();
+    authForm.addEventListener("submit", signIn);
     themeButton.addEventListener("click", toggleTheme);
     refreshButton.addEventListener("click", loadHistory);
+    signOutButton.addEventListener("click", signOut);
     typeFilter.addEventListener("change", render);
     dateFilter.addEventListener("change", render);
     searchFilter.addEventListener("input", render);
-
-    loadHistory();
 
     function initTheme() {
       const savedTheme = localStorage.getItem(themeKey);
@@ -405,10 +464,66 @@
       setTheme(nextTheme);
     }
 
+    async function initAuth() {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        showLogin("Supabase is not configured.");
+        return;
+      }
+
+      const session = await window.WordleBackend.getValidAdminSession();
+      if (session) {
+        showDashboard();
+        loadHistory();
+      } else {
+        showLogin("");
+      }
+    }
+
+    function showLogin(message) {
+      dashboard.hidden = true;
+      signOutButton.hidden = true;
+      refreshButton.hidden = true;
+      authPanel.hidden = false;
+      authError.textContent = message || "";
+    }
+
+    function showDashboard() {
+      authPanel.hidden = true;
+      dashboard.hidden = false;
+      signOutButton.hidden = false;
+      refreshButton.hidden = false;
+      authError.textContent = "";
+    }
+
+    async function signIn(event) {
+      event.preventDefault();
+      authError.textContent = "";
+      loginButton.disabled = true;
+      loginButton.textContent = "Signing in...";
+
+      try {
+        await window.WordleBackend.signInAdmin(emailInput.value.trim(), passwordInput.value);
+        passwordInput.value = "";
+        showDashboard();
+        loadHistory();
+      } catch (error) {
+        authError.textContent = "Could not sign in. Check the email and password.";
+        console.warn("Admin sign-in failed.", error);
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = "Sign In";
+      }
+    }
+
+    function signOut() {
+      window.WordleBackend.signOutAdmin();
+      attempts = [];
+      showLogin("");
+    }
+
     async function loadHistory() {
       statusEl.textContent = "Loading history...";
 
-      const localAttempts = getLocalAttempts();
       let remoteAttempts = [];
 
       if (window.WordleBackend && window.WordleBackend.isEnabled()) {
@@ -417,13 +532,17 @@
           statusEl.textContent = `Loaded ${remoteAttempts.length} shared plays.`;
         } catch (error) {
           console.warn("Unable to load shared history.", error);
-          statusEl.textContent = `Could not load shared history: ${error.message}. Showing this browser's local history.`;
+          statusEl.textContent = `Could not load shared history: ${error.message}`;
+          if (String(error.message).includes("Please sign in") || String(error.message).includes("JWT")) {
+            showLogin("Please sign in again.");
+            return;
+          }
         }
       } else {
-        statusEl.textContent = "Supabase is not configured yet. Showing this browser's local history only.";
+        statusEl.textContent = "Supabase is not configured yet.";
       }
 
-      attempts = mergeAttempts(remoteAttempts, localAttempts).map(normalizeAttempt);
+      attempts = mergeAttempts(remoteAttempts, []).map(normalizeAttempt);
       render();
     }
 
