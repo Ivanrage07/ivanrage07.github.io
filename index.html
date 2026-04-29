@@ -93,22 +93,25 @@
       width: min(100%, 520px);
       height: 58px;
       display: grid;
-      grid-template-columns: 120px 1fr 120px;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
+      gap: 8px;
       padding: 0 10px;
     }
 
     .brand {
       text-align: center;
       line-height: 1;
+      min-width: 0;
     }
 
     h1 {
       font-family: Georgia, "Times New Roman", serif;
-      font-size: 34px;
+      font-size: clamp(26px, 8vw, 34px);
       letter-spacing: 0;
       margin: 0;
       font-weight: 800;
+      white-space: nowrap;
     }
 
     .puzzle-id {
@@ -123,6 +126,11 @@
       display: flex;
       justify-content: flex-end;
       gap: 6px;
+      min-width: 0;
+    }
+
+    .header-actions.left {
+      justify-content: flex-start;
     }
 
     .icon-button {
@@ -651,16 +659,19 @@
 
     @media (max-width: 420px) {
       .header-inner {
-        grid-template-columns: 116px 1fr 116px;
         padding: 0 6px;
+        gap: 5px;
       }
 
       h1 {
-        font-size: 28px;
+        font-size: 26px;
       }
 
       .icon-button {
-        min-width: 34px;
+        min-width: 30px;
+        width: 30px;
+        height: 34px;
+        font-size: 12px;
       }
 
       .home-grid {
@@ -729,14 +740,15 @@
 <body>
   <header>
     <div class="header-inner">
-      <div></div>
+      <div class="header-actions left">
+        <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
+      </div>
       <div class="brand">
         <h1>Wordle</h1>
         <span id="puzzleId" class="puzzle-id"></span>
       </div>
       <div class="header-actions">
         <button id="customButton" class="icon-button" type="button" title="Custom word" aria-label="Custom word">+</button>
-        <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
         <button id="statsButton" class="icon-button" type="button" title="Stats" aria-label="Stats">%</button>
         <button id="shareButton" class="icon-button" type="button" title="Share" aria-label="Share">SH</button>
       </div>
