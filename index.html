@@ -19,7 +19,27 @@
       --key: #818384;
       --border: #3a3a3c;
       --focus: #85c0f9;
+      --input-bg: #0f0f10;
+      --toast-bg: #ffffff;
+      --toast-text: #121213;
       color-scheme: dark;
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f7f8;
+      --surface: #ffffff;
+      --surface-2: #eceff1;
+      --text: #111315;
+      --muted: #4d545c;
+      --empty: #d0d5da;
+      --filled: #9aa1a8;
+      --absent: #787c7e;
+      --key: #d3d6da;
+      --border: #d7dadd;
+      --input-bg: #ffffff;
+      --toast-bg: #111315;
+      --toast-text: #ffffff;
+      color-scheme: light;
     }
 
     * {
@@ -125,8 +145,8 @@
       top: 72px;
       left: 50%;
       transform: translateX(-50%);
-      background: #ffffff;
-      color: #121213;
+      background: var(--toast-bg);
+      color: var(--toast-text);
       padding: 12px 18px;
       border-radius: 4px;
       font-weight: 800;
@@ -253,6 +273,15 @@
 
     .home-panel.casual button {
       background: var(--present);
+    }
+
+    .site-credit {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 0 10px;
+      text-align: center;
     }
 
     #board {
@@ -576,7 +605,7 @@
       resize: vertical;
       border-radius: 6px;
       border: 1px solid var(--border);
-      background: #0f0f10;
+      background: var(--input-bg);
       color: var(--text);
       padding: 10px;
       line-height: 1.35;
@@ -600,7 +629,7 @@
       height: 48px;
       border: 2px solid var(--border);
       border-radius: 4px;
-      background: #0f0f10;
+      background: var(--input-bg);
       color: var(--text);
       font-size: 28px;
       font-weight: 900;
@@ -707,6 +736,7 @@
       </div>
       <div class="header-actions">
         <button id="customButton" class="icon-button" type="button" title="Custom word" aria-label="Custom word">+</button>
+        <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
         <button id="statsButton" class="icon-button" type="button" title="Stats" aria-label="Stats">%</button>
         <button id="shareButton" class="icon-button" type="button" title="Share" aria-label="Share">SH</button>
       </div>
@@ -753,6 +783,8 @@
     <div id="board" aria-label="Game board"></div>
     <div id="keyboard" aria-label="Keyboard"></div>
   </main>
+
+  <footer class="site-credit">made by lordGami</footer>
 
   <div id="modalBackdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -856,6 +888,7 @@
     const statsKey = "wordle-clone:stats";
     const localHistoryKey = "wordle-clone:local-history";
     const playerIdKey = "wordle-clone:player-id";
+    const themeKey = "wordle-clone:theme";
     const dictionaryCache = new Map();
     const definitionCache = new Map();
 
@@ -875,15 +908,18 @@
     const modalActions = document.getElementById("modalActions");
     const modalClose = document.getElementById("modalClose");
     const customButton = document.getElementById("customButton");
+    const themeButton = document.getElementById("themeButton");
     const statsButton = document.getElementById("statsButton");
     const shareButton = document.getElementById("shareButton");
     const puzzleIdEl = document.getElementById("puzzleId");
 
+    initTheme();
     startGame();
 
     async function startGame() {
       dailyModeButton.addEventListener("click", startDailyPuzzle);
       casualModeButton.addEventListener("click", startCasualPuzzle);
+      themeButton.addEventListener("click", toggleTheme);
 
       if (shouldShowLauncher()) {
         showLauncher();
@@ -923,6 +959,25 @@
       customButton.addEventListener("click", showCustomModal);
       statsButton.addEventListener("click", showStatsModal);
       shareButton.addEventListener("click", shareResult);
+    }
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem(themeKey);
+      const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+      setTheme(savedTheme || (prefersLight ? "light" : "dark"));
+    }
+
+    function setTheme(theme) {
+      const nextTheme = theme === "light" ? "light" : "dark";
+      document.documentElement.dataset.theme = nextTheme;
+      themeButton.textContent = nextTheme === "light" ? "☀" : "☾";
+      themeButton.title = nextTheme === "light" ? "Switch to dark mode" : "Switch to light mode";
+    }
+
+    function toggleTheme() {
+      const nextTheme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      localStorage.setItem(themeKey, nextTheme);
+      setTheme(nextTheme);
     }
 
     function shouldShowLauncher() {
@@ -1549,7 +1604,6 @@
 
       setModalActions([
         { label: "Share", primary: true, onClick: shareResult },
-        { label: "Play Again", onClick: replayCurrentPuzzle },
         { label: "New Puzzle", onClick: startNewPuzzle },
         { label: "Close", onClick: closeModal }
       ]);
@@ -1564,7 +1618,6 @@
       appendStats(modalBody);
       setModalActions([
         { label: "Share", primary: true, onClick: shareResult },
-        ...(state.gameOver ? [{ label: "Play Again", onClick: replayCurrentPuzzle }] : []),
         { label: "New Puzzle", onClick: startNewPuzzle },
         { label: "Close", onClick: closeModal }
       ]);
@@ -1870,11 +1923,6 @@
       url.searchParams.set("day", String(nextPuzzleId));
       url.hash = "";
       window.location.href = url.toString();
-    }
-
-    function replayCurrentPuzzle() {
-      localStorage.removeItem(stateKey);
-      window.location.reload();
     }
 
     function startDailyPuzzle() {

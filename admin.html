@@ -16,7 +16,21 @@
       --present: #b59f3b;
       --danger: #bd4b4b;
       --focus: #85c0f9;
+      --input-bg: #0f0f10;
+      --header-bg: #151516;
       color-scheme: dark;
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f7f8;
+      --surface: #ffffff;
+      --surface-2: #eceff1;
+      --text: #111315;
+      --muted: #4d545c;
+      --border: #d7dadd;
+      --input-bg: #ffffff;
+      --header-bg: #ffffff;
+      color-scheme: light;
     }
 
     * {
@@ -46,7 +60,7 @@
 
     header {
       border-bottom: 1px solid var(--border);
-      background: #151516;
+      background: var(--header-bg);
     }
 
     .header-inner,
@@ -98,6 +112,12 @@
       background: var(--correct);
     }
 
+    .icon-button {
+      min-width: 42px;
+      height: 42px;
+      padding: 0;
+    }
+
     main {
       padding: 22px 0 40px;
     }
@@ -120,14 +140,14 @@
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 4px;
-      background: #0f0f10;
+      background: var(--input-bg);
       color: var(--text);
       padding: 10px;
     }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 10px;
       margin-bottom: 18px;
     }
@@ -226,6 +246,14 @@
       text-align: center;
     }
 
+    .site-credit {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 0 18px;
+      text-align: center;
+    }
+
     @media (max-width: 760px) {
       .header-inner {
         align-items: flex-start;
@@ -250,6 +278,7 @@
       <h1>History</h1>
       <div class="header-actions">
         <a class="button" href="index.html">Game</a>
+        <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
         <button id="refreshButton" class="primary" type="button">Refresh</button>
       </div>
     </div>
@@ -311,16 +340,36 @@
     </section>
   </main>
 
+  <footer class="site-credit">made by lordGami</footer>
+
   <script src="supabase-config.js"></script>
   <script src="shared-history.js"></script>
   <script>
     "use strict";
 
     const localHistoryKey = "wordle-clone:local-history";
+    const themeKey = "wordle-clone:theme";
+    const dayMs = 86400000;
+    const baseDay = Date.UTC(2024, 0, 1);
+    const answers = [
+      "crane", "slate", "flame", "grape", "stone", "brink", "chair", "plant", "smile", "pride",
+      "cloud", "sword", "drink", "ghost", "light", "train", "crown", "beast", "magic", "dream",
+      "water", "green", "black", "white", "tiger", "eagle", "zebra", "mango", "peach", "berry",
+      "cider", "bloom", "raven", "amber", "glory", "frost", "sugar", "ocean", "river", "field",
+      "honey", "spark", "orbit", "piano", "maple", "brave", "fresh", "quiet", "sound", "blush",
+      "linen", "vivid", "lucky", "harsh", "noble", "wheat", "laser", "coral", "feast", "giant",
+      "shard", "shelf", "cabin", "flint", "spice", "globe", "march", "rally", "swirl", "vapor",
+      "trace", "knock", "drift", "pilot", "charm", "brass", "stark", "creek", "medal", "olive",
+      "toast", "blaze", "fairy", "grace", "movie", "score", "court", "prime", "novel", "slope",
+      "proud", "sweep", "level", "meter", "daisy", "hatch", "spoon", "vital", "lemon", "candy",
+      "fable", "cargo", "donut", "logic", "north", "south", "cable", "urban", "ranch", "index",
+      "quest", "hinge", "union", "siren", "adore", "clean", "creep", "delta", "evoke", "flora"
+    ];
     const statusEl = document.getElementById("status");
     const statsGrid = document.getElementById("statsGrid");
     const puzzleBody = document.getElementById("puzzleBody");
     const historyBody = document.getElementById("historyBody");
+    const themeButton = document.getElementById("themeButton");
     const refreshButton = document.getElementById("refreshButton");
     const typeFilter = document.getElementById("typeFilter");
     const dateFilter = document.getElementById("dateFilter");
@@ -328,12 +377,33 @@
 
     let attempts = [];
 
+    initTheme();
+    themeButton.addEventListener("click", toggleTheme);
     refreshButton.addEventListener("click", loadHistory);
     typeFilter.addEventListener("change", render);
     dateFilter.addEventListener("change", render);
     searchFilter.addEventListener("input", render);
 
     loadHistory();
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem(themeKey);
+      const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+      setTheme(savedTheme || (prefersLight ? "light" : "dark"));
+    }
+
+    function setTheme(theme) {
+      const nextTheme = theme === "light" ? "light" : "dark";
+      document.documentElement.dataset.theme = nextTheme;
+      themeButton.textContent = nextTheme === "light" ? "☀" : "☾";
+      themeButton.title = nextTheme === "light" ? "Switch to dark mode" : "Switch to light mode";
+    }
+
+    function toggleTheme() {
+      const nextTheme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      localStorage.setItem(themeKey, nextTheme);
+      setTheme(nextTheme);
+    }
 
     async function loadHistory() {
       statusEl.textContent = "Loading history...";
@@ -421,9 +491,11 @@
       const casual = rows.filter((attempt) => attempt.puzzle_kind === "casual").length;
       const custom = rows.filter((attempt) => attempt.puzzle_kind === "custom").length;
       const avg = wins ? average(rows.filter((attempt) => attempt.won).map((attempt) => attempt.guesses_used)) : 0;
+      const dailyInfo = getDailyInfo();
 
       statsGrid.innerHTML = "";
       [
+        [dailyInfo.label, dailyInfo.answer.toUpperCase()],
         ["Total Plays", rows.length],
         ["Wins", wins],
         ["Win %", rows.length ? `${Math.round((wins / rows.length) * 100)}%` : "0%"],
@@ -435,6 +507,28 @@
         stat.innerHTML = `<strong>${value}</strong><span>${label}</span>`;
         statsGrid.appendChild(stat);
       });
+    }
+
+    function getDailyInfo() {
+      const puzzleId = getDailyPuzzleId();
+      return {
+        answer: answers[positiveModulo(puzzleId, answers.length)],
+        label: dateFilter.value ? `Daily #${puzzleId}` : `Today #${puzzleId}`
+      };
+    }
+
+    function getDailyPuzzleId() {
+      if (!dateFilter.value) {
+        return Math.floor((Date.now() - baseDay) / dayMs);
+      }
+
+      const parts = dateFilter.value.split("-").map(Number);
+      const selectedDay = Date.UTC(parts[0], parts[1] - 1, parts[2]);
+      return Math.floor((selectedDay - baseDay) / dayMs);
+    }
+
+    function positiveModulo(value, size) {
+      return ((value % size) + size) % size;
     }
 
     function renderPuzzleTable(rows) {
