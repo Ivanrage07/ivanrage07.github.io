@@ -926,13 +926,10 @@
     const puzzleIdEl = document.getElementById("puzzleId");
 
     initTheme();
+    wireGlobalControls();
     startGame();
 
     async function startGame() {
-      dailyModeButton.addEventListener("click", startDailyPuzzle);
-      casualModeButton.addEventListener("click", startCasualPuzzle);
-      themeButton.addEventListener("click", toggleTheme);
-
       if (shouldShowLauncher()) {
         showLauncher();
         return;
@@ -964,13 +961,19 @@
       }
 
       document.addEventListener("keydown", onPhysicalKey);
+    }
+
+    function wireGlobalControls() {
+      dailyModeButton.addEventListener("click", startDailyPuzzle);
+      casualModeButton.addEventListener("click", startCasualPuzzle);
+      themeButton.addEventListener("click", toggleTheme);
+      customButton.addEventListener("click", showCustomModal);
+      statsButton.addEventListener("click", showStatsModal);
+      shareButton.addEventListener("click", shareResult);
       modalBackdrop.addEventListener("click", (event) => {
         if (event.target === modalBackdrop) closeModal();
       });
       modalClose.addEventListener("click", closeModal);
-      customButton.addEventListener("click", showCustomModal);
-      statsButton.addEventListener("click", showStatsModal);
-      shareButton.addEventListener("click", shareResult);
     }
 
     function initTheme() {
@@ -1616,7 +1619,7 @@
 
       setModalActions([
         { label: "Share", primary: true, onClick: shareResult },
-        { label: "New Puzzle", onClick: startNewPuzzle },
+        ...(state ? [{ label: "New Puzzle", onClick: startNewPuzzle }] : []),
         { label: "Close", onClick: closeModal }
       ]);
 
@@ -1673,7 +1676,7 @@
         bar.style.width = `${Math.max(8, (count / maxCount) * 100)}%`;
         bar.textContent = String(count);
 
-        if (state.gameOver && state.won && state.guesses.length === guessCount) {
+        if (state && state.gameOver && state.won && state.guesses.length === guessCount) {
           bar.classList.add("highlight");
         }
 
@@ -1816,7 +1819,11 @@
     }
 
     async function shareResult() {
-      const text = state.gameOver ? buildShareText() : `Play this puzzle: ${buildPuzzleUrl()}`;
+      const text = !state
+        ? `Play Wordle Clone: ${buildHomeUrl()}`
+        : state.gameOver
+          ? buildShareText()
+          : `Play this puzzle: ${buildPuzzleUrl()}`;
 
       if (navigator.share) {
         try {
@@ -1843,6 +1850,13 @@
         .join("\n");
 
       return `Wordle Clone ${puzzleLabel} ${score}\n${grid}\n${buildPuzzleUrl()}`;
+    }
+
+    function buildHomeUrl() {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.hash = "";
+      return url.toString();
     }
 
     function buildPuzzleUrl() {
