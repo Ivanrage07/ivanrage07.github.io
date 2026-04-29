@@ -939,6 +939,11 @@
         await loadRemoteCustomPuzzle(remotePuzzleId);
       }
 
+      if (remotePuzzleId && !customWord) {
+        showUnavailableCustomPuzzle();
+        return;
+      }
+
       configurePuzzle();
       state = loadState();
       puzzleIdEl.textContent = puzzleLabel;
@@ -946,10 +951,6 @@
       buildKeyboard();
       renderBoard();
       renderKeyboard();
-
-      if (remotePuzzleId && !customWord) {
-        showToast("Custom puzzle unavailable");
-      }
 
       if (state.gameOver && !state.recordedStats) {
         recordStats();
@@ -1003,6 +1004,13 @@
       document.body.classList.add("home");
       homeScreen.hidden = false;
       puzzleIdEl.textContent = "Choose";
+    }
+
+    function showUnavailableCustomPuzzle() {
+      document.body.classList.add("home");
+      homeScreen.hidden = false;
+      puzzleIdEl.textContent = "Unavailable";
+      showToast("Custom puzzle unavailable");
     }
 
     async function loadRemoteCustomPuzzle(id) {
