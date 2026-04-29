@@ -2,7 +2,7 @@
   "use strict";
 
   const config = window.WORDLE_SUPABASE_CONFIG || {};
-  const adminSessionKey = "wordle-clone:admin-session";
+  let adminSession = null;
 
   function hasRealValue(value) {
     return typeof value === "string" && value.trim() && !value.includes("YOUR_");
@@ -113,7 +113,7 @@
     }
 
     const session = normalizeSession(await response.json());
-    localStorage.setItem(adminSessionKey, JSON.stringify(session));
+    adminSession = session;
     return session;
   }
 
@@ -132,7 +132,7 @@
     }
 
     const nextSession = normalizeSession(await response.json());
-    localStorage.setItem(adminSessionKey, JSON.stringify(nextSession));
+    adminSession = nextSession;
     return nextSession;
   }
 
@@ -159,16 +159,11 @@
   }
 
   function getStoredAdminSession() {
-    try {
-      const session = JSON.parse(localStorage.getItem(adminSessionKey));
-      return session && session.access_token ? session : null;
-    } catch (error) {
-      return null;
-    }
+    return adminSession && adminSession.access_token ? adminSession : null;
   }
 
   function signOutAdmin() {
-    localStorage.removeItem(adminSessionKey);
+    adminSession = null;
   }
 
   window.WordleBackend = {
