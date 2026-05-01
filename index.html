@@ -6,7 +6,7 @@
   <title>WORDLORD</title>
   <style>
     :root {
-      --sidebar-width: 230px;
+      --sidebar-width: 172px;
       --bg: #121213;
       --surface: #1a1a1b;
       --surface-2: #202124;
@@ -103,7 +103,7 @@
     }
 
     .header-inner {
-      width: min(100%, 720px);
+      width: min(100%, 760px);
       height: 58px;
       display: grid;
       grid-template-columns: minmax(126px, 1fr) auto minmax(126px, 1fr);
@@ -147,8 +147,8 @@
     }
 
     .icon-button {
-      min-width: 42px;
-      height: 42px;
+      min-width: 46px;
+      height: 46px;
       border: 0;
       border-radius: 4px;
       background: transparent;
@@ -188,6 +188,11 @@
       font-size: 13px;
     }
 
+    .game-action {
+      min-width: 52px;
+      font-size: 14px;
+    }
+
     .sidebar-backdrop {
       position: fixed;
       inset: 0;
@@ -208,11 +213,11 @@
       width: var(--sidebar-width);
       border-right: 1px solid var(--border);
       background: var(--surface);
-      padding: 16px 12px;
+      padding: 12px 10px;
       z-index: 15;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
       transform: translateX(calc(-100% - 1px));
       transition: transform 0.2s ease;
       box-shadow: 16px 0 36px rgba(0, 0, 0, 0.32);
@@ -225,7 +230,7 @@
     .side-brand,
     .side-link {
       width: 100%;
-      min-height: 48px;
+      min-height: 44px;
       border: 0;
       border-radius: 6px;
       color: var(--text);
@@ -236,7 +241,7 @@
 
     .side-brand {
       background: var(--correct);
-      padding: 0 12px;
+      padding: 0 10px;
       letter-spacing: 0;
     }
 
@@ -247,7 +252,7 @@
 
     .side-link {
       background: transparent;
-      padding: 0 12px;
+      padding: 0 10px;
     }
 
     .side-link:hover,
@@ -782,20 +787,20 @@
         top: 58px;
         right: auto;
         bottom: 0;
-        width: min(300px, 82vw);
+        width: min(196px, 72vw);
         min-height: 0;
         border-top: 0;
         border-right: 1px solid var(--border);
-        padding: 16px 12px;
+        padding: 12px 10px;
         flex-direction: column;
         align-items: stretch;
-        gap: 16px;
+        gap: 12px;
       }
 
       .side-brand {
         width: 100%;
         min-width: 0;
-        min-height: 48px;
+        min-height: 44px;
         text-align: left;
       }
 
@@ -805,7 +810,7 @@
       }
 
       .side-link {
-        min-height: 48px;
+        min-height: 44px;
         text-align: left;
       }
 
@@ -865,13 +870,17 @@
       }
 
       .icon-button {
-        min-width: 42px;
-        height: 42px;
+        min-width: 46px;
+        height: 46px;
         font-size: 12px;
         padding: 0 8px;
       }
 
       .back-button {
+        min-width: 48px;
+      }
+
+      .game-action {
         min-width: 48px;
       }
 
@@ -972,9 +981,9 @@
         <span id="puzzleId" class="puzzle-id"></span>
       </div>
       <div class="header-actions">
-        <button id="customButton" class="icon-button" type="button" title="Custom word" aria-label="Custom word">+</button>
-        <button id="statsButton" class="icon-button" type="button" title="Stats" aria-label="Stats">%</button>
-        <button id="shareButton" class="icon-button" type="button" title="Share" aria-label="Share">SH</button>
+        <button id="customButton" class="icon-button game-action" type="button" title="Custom word" aria-label="Custom word">+</button>
+        <button id="statsButton" class="icon-button game-action" type="button" title="Stats" aria-label="Stats">%</button>
+        <button id="shareButton" class="icon-button game-action" type="button" title="Share" aria-label="Share">SH</button>
       </div>
     </div>
   </header>
