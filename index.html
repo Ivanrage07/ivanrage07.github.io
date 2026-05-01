@@ -63,7 +63,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     body.home {
@@ -316,14 +317,13 @@
 
     main {
       width: 100%;
-      max-width: 520px;
-      flex: 1;
-      min-height: 0;
+      max-width: 600px;
+      flex: 1 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 18px 8px 8px;
+      justify-content: flex-start;
+      padding: 18px 8px 14px;
     }
 
     body.home main {
@@ -448,7 +448,7 @@
       gap: 5px;
       width: min(330px, 90vw);
       aspect-ratio: 5 / 6;
-      flex: 0 1 auto;
+      flex: 0 0 auto;
     }
 
     .row {
@@ -473,6 +473,11 @@
 
     .tile.filled {
       border-color: var(--filled);
+    }
+
+    .tile.skipped {
+      border-color: var(--filled);
+      background: rgba(129, 131, 132, 0.18);
     }
 
     .tile.pop {
@@ -547,9 +552,10 @@
 
     #keyboard {
       width: 100%;
-      max-width: 500px;
+      max-width: min(560px, calc(100vw - 12px));
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 8px;
       margin-top: 18px;
       flex: 0 0 auto;
@@ -558,27 +564,41 @@
     .key-row {
       display: flex;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
+      width: auto;
     }
 
     button.key {
       height: 58px;
+      width: 46px;
       min-width: 0;
-      flex: 1 1 0;
+      flex: 0 0 46px;
       border: 0;
       border-radius: 4px;
       background: var(--key);
       color: var(--text);
       font-weight: 800;
-      font-size: 13px;
+      font-size: 20px;
       cursor: pointer;
       text-transform: uppercase;
       padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
     }
 
     button.key.wide {
-      flex: 1.55 1 0;
+      width: 64px;
+      flex-basis: 64px;
       font-size: 12px;
+    }
+
+    button.key.space {
+      width: 240px;
+      flex-basis: 240px;
+      font-size: 12px;
+      text-transform: none;
     }
 
     button.key.correct {
@@ -939,6 +959,7 @@
 
       main {
         padding-top: 12px;
+        padding-bottom: 14px;
       }
 
       #board {
@@ -946,20 +967,31 @@
       }
 
       #keyboard {
-        gap: 6px;
+        max-width: calc(100vw - 12px);
+        gap: 7px;
       }
 
       .key-row {
-        gap: 4px;
+        gap: 5px;
       }
 
       button.key {
-        height: 52px;
-        font-size: 12px;
+        height: 54px;
+        width: 30px;
+        flex-basis: 30px;
+        font-size: 18px;
       }
 
       button.key.wide {
-        font-size: 11px;
+        width: 48px;
+        flex-basis: 48px;
+        font-size: 10px;
+      }
+
+      button.key.space {
+        width: 190px;
+        flex-basis: 190px;
+        font-size: 10px;
       }
     }
 
@@ -973,11 +1005,33 @@
       }
 
       #keyboard {
-        margin-top: 10px;
+        margin-top: 12px;
       }
 
       button.key {
-        height: 46px;
+        height: 50px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .key-row {
+        gap: 4px;
+      }
+
+      button.key {
+        width: 27px;
+        flex-basis: 27px;
+        font-size: 17px;
+      }
+
+      button.key.wide {
+        width: 44px;
+        flex-basis: 44px;
+      }
+
+      button.key.space {
+        width: 170px;
+        flex-basis: 170px;
       }
     }
   </style>
@@ -1075,6 +1129,8 @@
 
     const WORD_LENGTH = 5;
     const MAX_GUESSES = 6;
+    const SKIP_CHAR = " ";
+    const SPACE_KEY = "Space";
     const REVEAL_STEP = 280;
     const DAY_MS = 86400000;
     const BASE_DAY = Date.UTC(2024, 0, 1);
@@ -1146,7 +1202,8 @@
     const KEYBOARD_ROWS = Object.freeze([
       ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
       ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-      ["Enter", "z", "x", "c", "v", "b", "n", "m", "Backspace"]
+      ["z", "x", "c", "v", "b", "n", "m"],
+      ["Enter", SPACE_KEY, "Backspace"]
     ]);
 
     const STATUS_PRIORITY = Object.freeze({ absent: 1, present: 2, correct: 3 });
@@ -1446,7 +1503,7 @@
       });
 
       const gameOver = Boolean(saved.gameOver) || guesses.length === MAX_GUESSES || guesses.includes(secretWord);
-      const currentGuess = gameOver ? "" : String(saved.currentGuess || "").toLowerCase().replace(/[^a-z]/g, "").slice(0, WORD_LENGTH);
+      const currentGuess = gameOver ? "" : String(saved.currentGuess || "").toLowerCase().replace(/[^a-z ]/g, "").slice(0, WORD_LENGTH);
 
       return {
         guesses,
@@ -1495,11 +1552,15 @@
           key.className = "key";
           key.type = "button";
           key.dataset.key = keyValue;
-          key.textContent = keyValue === "Backspace" ? "Del" : keyValue;
-          key.setAttribute("aria-label", keyValue === "Backspace" ? "Backspace" : keyValue);
+          key.textContent = getKeyLabel(keyValue);
+          key.setAttribute("aria-label", getKeyAriaLabel(keyValue));
 
           if (keyValue === "Enter" || keyValue === "Backspace") {
             key.classList.add("wide");
+          }
+
+          if (keyValue === SPACE_KEY) {
+            key.classList.add("space");
           }
 
           key.addEventListener("click", () => handleKey(keyValue));
@@ -1510,6 +1571,18 @@
       });
     }
 
+    function getKeyLabel(keyValue) {
+      if (keyValue === "Backspace") return "⌫";
+      if (keyValue === SPACE_KEY) return "Space";
+      return keyValue;
+    }
+
+    function getKeyAriaLabel(keyValue) {
+      if (keyValue === "Backspace") return "Backspace";
+      if (keyValue === SPACE_KEY) return "Skip tile";
+      return keyValue;
+    }
+
     function renderBoard() {
       for (let rowIndex = 0; rowIndex < MAX_GUESSES; rowIndex += 1) {
         const submittedGuess = state.guesses[rowIndex];
@@ -1517,12 +1590,18 @@
 
         for (let colIndex = 0; colIndex < WORD_LENGTH; colIndex += 1) {
           const tile = getTile(rowIndex, colIndex);
-          const letter = submittedGuess ? submittedGuess[colIndex] : activeGuess[colIndex] || "";
+          const rawLetter = submittedGuess ? submittedGuess[colIndex] : activeGuess[colIndex] || "";
+          const isSkipped = !submittedGuess && rawLetter === SKIP_CHAR;
+          const letter = isSkipped ? "" : rawLetter;
           tile.className = "tile";
           tile.textContent = letter;
 
           if (letter) {
             tile.classList.add("filled");
+          }
+
+          if (isSkipped) {
+            tile.classList.add("skipped");
           }
 
           if (submittedGuess && state.evaluations[rowIndex]) {
@@ -1555,6 +1634,9 @@
         handleKey("Enter");
       } else if (event.key === "Backspace") {
         handleKey("Backspace");
+      } else if (event.key === " " || event.key === "Spacebar") {
+        event.preventDefault();
+        handleKey(SPACE_KEY);
       } else if (/^[a-zA-Z]$/.test(event.key)) {
         handleKey(event.key.toLowerCase());
       }
@@ -1573,9 +1655,27 @@
         return;
       }
 
+      if (key === SPACE_KEY) {
+        skipTile();
+        return;
+      }
+
       if (/^[a-z]$/.test(key)) {
         addLetter(key);
       }
+    }
+
+    function skipTile() {
+      if (state.currentGuess.length >= WORD_LENGTH) return;
+
+      const rowIndex = state.guesses.length;
+      const colIndex = state.currentGuess.length;
+      state.currentGuess += SKIP_CHAR;
+      saveState();
+
+      const tile = getTile(rowIndex, colIndex);
+      tile.textContent = "";
+      tile.classList.add("skipped");
     }
 
     function addLetter(letter) {
@@ -1608,6 +1708,12 @@
     async function submitGuess() {
       if (state.currentGuess.length < WORD_LENGTH) {
         showToast("Not enough letters");
+        shakeRow();
+        return;
+      }
+
+      if (state.currentGuess.includes(SKIP_CHAR)) {
+        showToast("Fill skipped tiles");
         shakeRow();
         return;
       }
