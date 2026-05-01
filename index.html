@@ -93,7 +93,6 @@
 
     header {
       width: 100%;
-      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: center;
       flex: 0 0 58px;
@@ -116,11 +115,12 @@
       text-align: center;
       line-height: 1;
       min-width: 0;
+      transform: translateY(4px);
     }
 
     h1 {
       font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(26px, 8vw, 34px);
+      font-size: clamp(24px, 7vw, 31px);
       letter-spacing: 0;
       margin: 0;
       font-weight: 800;
@@ -147,8 +147,8 @@
     }
 
     .icon-button {
-      min-width: 46px;
-      height: 46px;
+      min-width: 50px;
+      height: 50px;
       border: 0;
       border-radius: 4px;
       background: transparent;
@@ -167,12 +167,16 @@
 
     .menu-button {
       gap: 0;
+      position: fixed;
+      top: 4px;
+      left: 8px;
+      z-index: 18;
     }
 
     .hamburger {
-      width: 22px;
+      width: 24px;
       display: grid;
-      gap: 5px;
+      gap: 6px;
     }
 
     .hamburger span {
@@ -183,14 +187,15 @@
     }
 
     .back-button {
-      width: auto;
-      min-width: 58px;
-      font-size: 13px;
+      width: 50px;
+      min-width: 50px;
+      font-size: 24px;
+      line-height: 1;
     }
 
     .game-action {
-      min-width: 52px;
-      font-size: 14px;
+      min-width: 58px;
+      font-size: 17px;
     }
 
     .sidebar-backdrop {
@@ -211,7 +216,6 @@
       left: 0;
       bottom: 0;
       width: var(--sidebar-width);
-      border-right: 1px solid var(--border);
       background: var(--surface);
       padding: 12px 10px;
       z-index: 15;
@@ -261,8 +265,29 @@
     }
 
     .side-link.active {
-      border-left: 4px solid var(--correct);
-      padding-left: 8px;
+      box-shadow: inset 0 0 0 1px rgba(83, 141, 78, 0.48);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      right: 12px;
+      bottom: 14px;
+      width: 46px;
+      height: 46px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle:hover {
+      background: var(--key);
     }
 
     .toast {
@@ -305,12 +330,12 @@
     }
 
     .home-screen {
-      width: min(920px, calc(100vw - 24px));
+      width: min(640px, calc(100vw - 24px));
       flex: 1;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 24px 0 34px;
+      padding: 16px 0 22px;
     }
 
     body.home .home-screen {
@@ -321,85 +346,90 @@
       width: 100%;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
+      gap: 12px;
     }
 
     .home-panel {
-      min-height: 390px;
-      border: 1px solid var(--border);
+      min-height: 168px;
+      width: 100%;
+      border: 0;
       border-radius: 8px;
       background: var(--surface);
-      padding: 26px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      text-align: center;
       overflow: hidden;
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+      transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
     }
 
-    .home-panel h2 {
-      margin: 0 0 12px;
+    .home-panel:hover {
+      background: var(--surface-2);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+    }
+
+    .home-panel:active {
+      transform: translateY(-1px);
+    }
+
+    .home-title {
+      margin: 0;
       font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(2rem, 5vw, 4rem);
+      font-size: clamp(1.65rem, 3.2vw, 2.45rem);
+      font-weight: 900;
       line-height: 0.95;
       letter-spacing: 0;
     }
 
-    .home-panel p {
-      color: var(--muted);
-      line-height: 1.45;
-      margin: 0;
-      max-width: 30rem;
-    }
-
-    .mini-board {
-      display: grid;
-      grid-template-columns: repeat(5, 38px);
-      gap: 5px;
-      margin: 24px 0;
-    }
-
-    .mini-tile {
-      width: 38px;
-      height: 38px;
+    .card-art {
+      width: min(100%, 178px);
+      height: 72px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 2px solid var(--border);
-      font-weight: 900;
-      text-transform: uppercase;
     }
 
-    .mini-tile.correct {
+    .word-art {
+      display: grid;
+      grid-template-columns: repeat(4, 38px);
+      grid-auto-rows: 31px;
+      gap: 5px;
+      align-items: stretch;
+      place-content: center;
+    }
+
+    .word-block {
+      border-radius: 3px;
+      background: #101112;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      height: 100%;
+    }
+
+    .word-block.correct {
       background: var(--correct);
-      border-color: var(--correct);
     }
 
-    .mini-tile.present {
+    .word-block.present {
       background: var(--present);
-      border-color: var(--present);
     }
 
-    .mini-tile.absent {
+    .word-block.absent {
       background: var(--absent);
-      border-color: var(--absent);
     }
 
-    .home-panel button {
-      width: fit-content;
-      min-width: 178px;
-      min-height: 50px;
-      border: 0;
-      border-radius: 4px;
-      padding: 14px 18px;
-      background: var(--correct);
-      color: var(--text);
-      font-weight: 900;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    .home-panel.casual button {
+    .casual .word-block.correct {
       background: var(--present);
+    }
+
+    .casual .word-block.present {
+      background: var(--correct);
     }
 
     .site-credit {
@@ -790,7 +820,7 @@
         width: min(196px, 72vw);
         min-height: 0;
         border-top: 0;
-        border-right: 1px solid var(--border);
+        border-right: 0;
         padding: 12px 10px;
         flex-direction: column;
         align-items: stretch;
@@ -815,15 +845,14 @@
       }
 
       .side-link.active {
-        border-left: 4px solid var(--correct);
         border-bottom: 0;
-        padding-left: 8px;
+        padding-left: 10px;
       }
 
       .home-screen {
-        width: min(920px, calc(100vw - 24px));
+        width: min(640px, calc(100vw - 24px));
         margin-left: 0;
-        padding-bottom: 34px;
+        padding: 12px 0 18px;
       }
 
       main {
@@ -858,6 +887,7 @@
         grid-column: 1 / 4;
         grid-row: 1 / 2;
         justify-self: center;
+        transform: translateY(8px);
       }
 
       .header-actions:not(.left) {
@@ -866,46 +896,44 @@
       }
 
       h1 {
-        font-size: 29px;
+        font-size: 27px;
       }
 
       .icon-button {
-        min-width: 46px;
-        height: 46px;
+        min-width: 50px;
+        height: 50px;
         font-size: 12px;
         padding: 0 8px;
       }
 
       .back-button {
-        min-width: 48px;
+        min-width: 50px;
       }
 
       .game-action {
-        min-width: 48px;
+        min-width: 52px;
+        font-size: 16px;
       }
 
       .home-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
       }
 
       .home-panel {
-        min-height: 310px;
-        padding: 20px;
+        min-height: 136px;
+        padding: 14px;
+        gap: 13px;
       }
 
-      .home-panel button {
-        width: 100%;
-        min-height: 54px;
-        font-size: 17px;
+      .card-art {
+        height: 54px;
       }
 
-      .mini-board {
-        grid-template-columns: repeat(5, 31px);
-      }
-
-      .mini-tile {
-        width: 31px;
-        height: 31px;
+      .word-art {
+        grid-template-columns: repeat(4, 31px);
+        grid-auto-rows: 23px;
+        gap: 4px;
       }
 
       main {
@@ -960,6 +988,7 @@
       <button id="sideDailyButton" class="side-link" type="button">Daily</button>
       <button id="sideCasualButton" class="side-link" type="button">Casual</button>
     </nav>
+    <button id="themeButton" class="theme-toggle" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
   </aside>
   <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
 
@@ -973,8 +1002,7 @@
             <span></span>
           </span>
         </button>
-        <button id="backButton" class="icon-button back-button" type="button" title="Back home" aria-label="Back home">Back</button>
-        <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
+        <button id="backButton" class="icon-button back-button" type="button" title="Back home" aria-label="Back home">&larr;</button>
       </div>
       <div class="brand">
         <h1>WORDLORD</h1>
@@ -992,35 +1020,33 @@
 
   <section id="homeScreen" class="home-screen" aria-label="Choose game mode">
     <div class="home-grid">
-      <article class="home-panel daily">
-        <div>
-          <h2>Daily WORDLORD</h2>
-          <p>One shared puzzle for the day. Everyone gets the same word.</p>
-          <div class="mini-board" aria-hidden="true">
-            <span class="mini-tile correct">D</span>
-            <span class="mini-tile present">A</span>
-            <span class="mini-tile absent">I</span>
-            <span class="mini-tile correct">L</span>
-            <span class="mini-tile present">Y</span>
-          </div>
-        </div>
-        <button id="dailyModeButton" type="button">Play Daily</button>
-      </article>
+      <button id="dailyModeButton" class="home-panel daily" type="button" aria-label="Play Daily">
+        <span class="home-title">Daily</span>
+        <span class="card-art word-art" aria-hidden="true">
+          <span class="word-block absent"></span>
+          <span class="word-block present"></span>
+          <span class="word-block absent"></span>
+          <span class="word-block correct"></span>
+          <span class="word-block correct"></span>
+          <span class="word-block absent"></span>
+          <span class="word-block present"></span>
+          <span class="word-block absent"></span>
+        </span>
+      </button>
 
-      <article class="home-panel casual">
-        <div>
-          <h2>Casual Play</h2>
-          <p>Unlimited random puzzles for messing around, warming up, or replaying without waiting for tomorrow.</p>
-          <div class="mini-board" aria-hidden="true">
-            <span class="mini-tile present">P</span>
-            <span class="mini-tile correct">L</span>
-            <span class="mini-tile correct">A</span>
-            <span class="mini-tile absent">Y</span>
-            <span class="mini-tile present">S</span>
-          </div>
-        </div>
-        <button id="casualModeButton" type="button">Play Casual</button>
-      </article>
+      <button id="casualModeButton" class="home-panel casual" type="button" aria-label="Play Casual">
+        <span class="home-title">Casual</span>
+        <span class="card-art word-art" aria-hidden="true">
+          <span class="word-block absent"></span>
+          <span class="word-block present"></span>
+          <span class="word-block absent"></span>
+          <span class="word-block correct"></span>
+          <span class="word-block correct"></span>
+          <span class="word-block absent"></span>
+          <span class="word-block present"></span>
+          <span class="word-block absent"></span>
+        </span>
+      </button>
 
     </div>
   </section>
@@ -1246,6 +1272,7 @@
       document.documentElement.dataset.theme = nextTheme;
       themeButton.textContent = nextTheme === "light" ? "☀" : "☾";
       themeButton.title = nextTheme === "light" ? "Switch to dark mode" : "Switch to light mode";
+      themeButton.setAttribute("aria-label", themeButton.title);
     }
 
     function toggleTheme() {
@@ -1261,7 +1288,7 @@
     function showLauncher() {
       document.body.classList.add("home");
       homeScreen.hidden = false;
-      puzzleIdEl.textContent = "Choose";
+      puzzleIdEl.textContent = "";
       updateModeNav("");
     }
 
