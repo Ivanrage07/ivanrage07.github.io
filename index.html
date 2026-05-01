@@ -550,11 +550,6 @@
     }
 
     #keyboard {
-      --key-w: 39px;
-      --key-h: 43px;
-      --key-gap: 6px;
-      --wide-w: 54px;
-      --space-w: 204px;
       width: 100%;
       max-width: min(560px, calc(100vw - 12px));
       display: flex;
@@ -567,29 +562,16 @@
 
     .key-row {
       display: flex;
-      justify-content: flex-start;
-      gap: var(--key-gap);
-      width: calc((var(--key-w) * 10) + (var(--key-gap) * 9));
-      max-width: 100%;
-    }
-
-    .key-row:nth-child(2) {
-      padding-left: calc((var(--key-w) + var(--key-gap)) / 2);
-    }
-
-    .key-row:nth-child(3) {
-      padding-left: calc(var(--key-w) + var(--key-gap));
-    }
-
-    .key-row:nth-child(4) {
       justify-content: center;
+      gap: 6px;
+      width: auto;
     }
 
     button.key {
-      height: var(--key-h);
-      width: var(--key-w);
+      height: 43px;
+      width: 42px;
       min-width: 0;
-      flex: 0 0 var(--key-w);
+      flex: 0 0 42px;
       border: 0;
       border-radius: 8px;
       background: var(--key);
@@ -606,14 +588,14 @@
     }
 
     button.key.wide {
-      width: var(--wide-w);
-      flex-basis: var(--wide-w);
+      width: 58px;
+      flex-basis: 58px;
       font-size: 12px;
     }
 
     button.key.space {
-      width: var(--space-w);
-      flex-basis: var(--space-w);
+      width: 214px;
+      flex-basis: 214px;
       font-size: 12px;
       text-transform: none;
     }
@@ -984,11 +966,6 @@
       }
 
       #keyboard {
-        --key-w: 26px;
-        --key-h: 40px;
-        --key-gap: 4px;
-        --wide-w: 42px;
-        --space-w: 168px;
         max-width: calc(100vw - 12px);
         gap: 6px;
       }
@@ -998,21 +975,21 @@
       }
 
       button.key {
-        height: var(--key-h);
-        width: var(--key-w);
-        flex-basis: var(--key-w);
+        height: 40px;
+        width: 29px;
+        flex-basis: 29px;
         font-size: 17px;
       }
 
       button.key.wide {
-        width: var(--wide-w);
-        flex-basis: var(--wide-w);
+        width: 46px;
+        flex-basis: 46px;
         font-size: 10px;
       }
 
       button.key.space {
-        width: var(--space-w);
-        flex-basis: var(--space-w);
+        width: 188px;
+        flex-basis: 188px;
         font-size: 10px;
       }
     }
@@ -1031,19 +1008,25 @@
       }
 
       button.key {
-        height: var(--key-h);
+        height: 38px;
       }
     }
 
     @media (max-width: 360px) {
-      #keyboard {
-        --key-w: 24px;
-        --wide-w: 38px;
-        --space-w: 152px;
+      button.key {
+        width: 27px;
+        flex-basis: 27px;
+        font-size: 16px;
       }
 
-      button.key {
-        font-size: 16px;
+      button.key.wide {
+        width: 42px;
+        flex-basis: 42px;
+      }
+
+      button.key.space {
+        width: 172px;
+        flex-basis: 172px;
       }
     }
 
@@ -1069,11 +1052,6 @@
       }
 
       body:not(.home) #keyboard {
-        --key-w: clamp(24px, 6.7vw, 26px);
-        --key-h: clamp(34px, 4.9dvh, 40px);
-        --key-gap: clamp(3px, 1vw, 4px);
-        --wide-w: clamp(38px, 10.8vw, 42px);
-        --space-w: clamp(152px, 43vw, 168px);
         margin-top: 0;
         gap: clamp(4px, 0.8dvh, 6px);
       }
@@ -1083,19 +1061,19 @@
       }
 
       body:not(.home) button.key {
-        width: var(--key-w);
-        height: var(--key-h);
-        flex-basis: var(--key-w);
+        width: clamp(27px, 7.4vw, 29px);
+        height: clamp(34px, 4.9dvh, 40px);
+        flex-basis: clamp(27px, 7.4vw, 29px);
       }
 
       body:not(.home) button.key.wide {
-        width: var(--wide-w);
-        flex-basis: var(--wide-w);
+        width: clamp(42px, 11.8vw, 46px);
+        flex-basis: clamp(42px, 11.8vw, 46px);
       }
 
       body:not(.home) button.key.space {
-        width: var(--space-w);
-        flex-basis: var(--space-w);
+        width: clamp(172px, 47vw, 188px);
+        flex-basis: clamp(172px, 47vw, 188px);
       }
 
       body:not(.home) .site-credit {
