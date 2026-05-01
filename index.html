@@ -1079,6 +1079,10 @@
     const DAY_MS = 86400000;
     const BASE_DAY = Date.UTC(2024, 0, 1);
     const API_BASE = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+    const SOUND_FILES = Object.freeze({
+      lose: "fahh-slowed.mp3",
+      allGray: "fahhh_KcgAXfs.mp3"
+    });
 
     const ANSWERS = Object.freeze([
       "crane", "slate", "flame", "grape", "stone", "brink", "chair", "plant", "smile", "pride",
@@ -1164,10 +1168,12 @@
     const themeKey = "wordle-clone:theme";
     const dictionaryCache = new Map();
     const definitionCache = new Map();
+    const soundCache = new Map();
 
     let state = null;
     let isChecking = false;
     let isRevealing = false;
+    let soundsPrimed = false;
 
     const homeScreen = document.getElementById("homeScreen");
     const homeButton = document.getElementById("homeButton");
@@ -1559,6 +1565,8 @@
     function handleKey(key) {
       if (state.gameOver || isChecking || isRevealing) return;
 
+      primeGameSounds();
+
       if (key === "Enter") {
         submitGuess();
         return;
@@ -1638,9 +1646,15 @@
           saveState();
           queueHistoryLog();
 
+          if (!won) {
+            playGameSound("lose");
+          }
+
           const messages = ["Genius", "Magnificent", "Impressive", "Splendid", "Great", "Phew"];
           showToast(won ? messages[rowIndex] : secretWord.toUpperCase());
           showEndModal();
+        } else if (isAllGrayResult(result)) {
+          playGameSound("allGray");
         }
 
         isRevealing = false;
@@ -1658,6 +1672,66 @@
       });
 
       setTimeout(done, WORD_LENGTH * REVEAL_STEP + 260);
+    }
+
+    function isAllGrayResult(result) {
+      return result.every((status) => status === "absent");
+    }
+
+    function getGameAudio(name) {
+      const src = SOUND_FILES[name];
+      if (!src) return null;
+
+      let audio = soundCache.get(name);
+      if (!audio) {
+        audio = new Audio(src);
+        audio.preload = "auto";
+        soundCache.set(name, audio);
+      }
+
+      return audio;
+    }
+
+    function primeGameSounds() {
+      if (soundsPrimed) return;
+      soundsPrimed = true;
+
+      Object.keys(SOUND_FILES).forEach((name) => {
+        const audio = getGameAudio(name);
+        if (!audio) return;
+
+        audio.muted = true;
+        const playPromise = audio.play();
+        if (playPromise && typeof playPromise.then === "function") {
+          playPromise
+            .then(() => {
+              audio.pause();
+              audio.currentTime = 0;
+              audio.muted = false;
+            })
+            .catch(() => {
+              audio.muted = false;
+            });
+        } else {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+        }
+      });
+    }
+
+    function playGameSound(name) {
+      const audio = getGameAudio(name);
+      if (!audio) return;
+
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
     }
 
     async function isValidWord(word) {
