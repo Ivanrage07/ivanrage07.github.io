@@ -1059,6 +1059,9 @@
 
   <footer class="site-credit">made by lordGami</footer>
 
+  <audio id="loseSound" src="fahh-slowed.mp3" preload="auto" playsinline></audio>
+  <audio id="allGraySound" src="fahhh_KcgAXfs.mp3" preload="auto" playsinline></audio>
+
   <div id="modalBackdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <button id="modalClose" class="modal-close" type="button" aria-label="Close">X</button>
@@ -1080,8 +1083,8 @@
     const BASE_DAY = Date.UTC(2024, 0, 1);
     const API_BASE = "https://api.dictionaryapi.dev/api/v2/entries/en/";
     const SOUND_FILES = Object.freeze({
-      lose: "fahh-slowed.mp3",
-      allGray: "fahhh_KcgAXfs.mp3"
+      lose: { id: "loseSound", src: "fahh-slowed.mp3" },
+      allGray: { id: "allGraySound", src: "fahhh_KcgAXfs.mp3" }
     });
 
     const ANSWERS = Object.freeze([
@@ -1196,6 +1199,8 @@
     const themeButton = document.getElementById("themeButton");
     const statsButton = document.getElementById("statsButton");
     const shareButton = document.getElementById("shareButton");
+    const loseSound = document.getElementById("loseSound");
+    const allGraySound = document.getElementById("allGraySound");
     const puzzleIdEl = document.getElementById("puzzleId");
 
     initTheme();
@@ -1259,7 +1264,10 @@
       customButton.addEventListener("click", showCustomModal);
       statsButton.addEventListener("click", showStatsModal);
       shareButton.addEventListener("click", shareResult);
+      document.addEventListener("pointerdown", primeGameSounds, { once: true });
+      document.addEventListener("touchstart", primeGameSounds, { once: true, passive: true });
       document.addEventListener("keydown", (event) => {
+        primeGameSounds();
         if (event.key === "Escape") closeSidebar();
       });
       modalBackdrop.addEventListener("click", (event) => {
@@ -1679,12 +1687,12 @@
     }
 
     function getGameAudio(name) {
-      const src = SOUND_FILES[name];
-      if (!src) return null;
+      const config = SOUND_FILES[name];
+      if (!config) return null;
 
       let audio = soundCache.get(name);
       if (!audio) {
-        audio = new Audio(src);
+        audio = document.getElementById(config.id) || new Audio(config.src);
         audio.preload = "auto";
         soundCache.set(name, audio);
       }
@@ -1700,22 +1708,22 @@
         const audio = getGameAudio(name);
         if (!audio) return;
 
-        audio.muted = true;
+        audio.volume = 0.001;
         const playPromise = audio.play();
         if (playPromise && typeof playPromise.then === "function") {
           playPromise
             .then(() => {
               audio.pause();
               audio.currentTime = 0;
-              audio.muted = false;
+              audio.volume = 1;
             })
             .catch(() => {
-              audio.muted = false;
+              audio.volume = 1;
             });
         } else {
           audio.pause();
           audio.currentTime = 0;
-          audio.muted = false;
+          audio.volume = 1;
         }
       });
     }
@@ -1727,6 +1735,7 @@
       audio.pause();
       audio.currentTime = 0;
       audio.muted = false;
+      audio.volume = 1;
 
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.catch === "function") {
