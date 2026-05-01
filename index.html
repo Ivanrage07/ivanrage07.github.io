@@ -445,7 +445,7 @@
     #board {
       display: grid;
       grid-template-rows: repeat(6, 1fr);
-      gap: 5px;
+      gap: 10px;
       width: min(330px, 90vw);
       aspect-ratio: 5 / 6;
       flex: 0 0 auto;
@@ -454,11 +454,14 @@
     .row {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 5px;
+      gap: 10px;
     }
 
     .tile {
-      border: 2px solid var(--empty);
+      border: 0;
+      border-radius: 9px;
+      background: var(--surface-2);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -466,17 +469,16 @@
       font-weight: 800;
       text-transform: uppercase;
       user-select: none;
-      transition: border-color 0.15s ease;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
       line-height: 1;
       aspect-ratio: 1;
     }
 
     .tile.filled {
-      border-color: var(--filled);
+      background: var(--filled);
     }
 
     .tile.skipped {
-      border-color: var(--filled);
       background: rgba(129, 131, 132, 0.18);
     }
 
@@ -490,17 +492,14 @@
 
     .tile.correct {
       background: var(--correct);
-      border-color: var(--correct);
     }
 
     .tile.present {
       background: var(--present);
-      border-color: var(--present);
     }
 
     .tile.absent {
       background: var(--absent);
-      border-color: var(--absent);
     }
 
     .row.shake {
@@ -564,17 +563,17 @@
     .key-row {
       display: flex;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       width: auto;
     }
 
     button.key {
-      height: 58px;
-      width: 46px;
+      height: 43px;
+      width: 39px;
       min-width: 0;
-      flex: 0 0 46px;
+      flex: 0 0 39px;
       border: 0;
-      border-radius: 4px;
+      border-radius: 8px;
       background: var(--key);
       color: var(--text);
       font-weight: 800;
@@ -589,14 +588,14 @@
     }
 
     button.key.wide {
-      width: 64px;
-      flex-basis: 64px;
+      width: 54px;
+      flex-basis: 54px;
       font-size: 12px;
     }
 
     button.key.space {
-      width: 240px;
-      flex-basis: 240px;
+      width: 204px;
+      flex-basis: 204px;
       font-size: 12px;
       text-transform: none;
     }
@@ -968,29 +967,29 @@
 
       #keyboard {
         max-width: calc(100vw - 12px);
-        gap: 7px;
+        gap: 6px;
       }
 
       .key-row {
-        gap: 5px;
+        gap: 4px;
       }
 
       button.key {
-        height: 54px;
-        width: 30px;
-        flex-basis: 30px;
-        font-size: 18px;
+        height: 40px;
+        width: 26px;
+        flex-basis: 26px;
+        font-size: 17px;
       }
 
       button.key.wide {
-        width: 48px;
-        flex-basis: 48px;
+        width: 42px;
+        flex-basis: 42px;
         font-size: 10px;
       }
 
       button.key.space {
-        width: 190px;
-        flex-basis: 190px;
+        width: 168px;
+        flex-basis: 168px;
         font-size: 10px;
       }
     }
@@ -1009,7 +1008,7 @@
       }
 
       button.key {
-        height: 50px;
+        height: 38px;
       }
     }
 
@@ -1019,19 +1018,19 @@
       }
 
       button.key {
-        width: 27px;
-        flex-basis: 27px;
-        font-size: 17px;
+        width: 24px;
+        flex-basis: 24px;
+        font-size: 16px;
       }
 
       button.key.wide {
-        width: 44px;
-        flex-basis: 44px;
+        width: 38px;
+        flex-basis: 38px;
       }
 
       button.key.space {
-        width: 170px;
-        flex-basis: 170px;
+        width: 152px;
+        flex-basis: 152px;
       }
     }
   </style>
