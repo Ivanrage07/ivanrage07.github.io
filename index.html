@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wordle Clone</title>
+  <title>WORDLORD</title>
   <style>
     :root {
+      --sidebar-width: 230px;
       --bg: #121213;
       --surface: #1a1a1b;
       --surface-2: #202124;
@@ -68,6 +69,15 @@
       overflow: auto;
     }
 
+    body.home .back-button {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    body.sidebar-open {
+      overflow: hidden;
+    }
+
     button,
     input,
     textarea {
@@ -87,13 +97,16 @@
       display: flex;
       justify-content: center;
       flex: 0 0 58px;
+      position: relative;
+      z-index: 16;
+      background: var(--bg);
     }
 
     .header-inner {
-      width: min(100%, 520px);
+      width: min(100%, 720px);
       height: 58px;
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: minmax(126px, 1fr) auto minmax(126px, 1fr);
       align-items: center;
       gap: 8px;
       padding: 0 10px;
@@ -134,18 +147,117 @@
     }
 
     .icon-button {
-      min-width: 36px;
-      height: 36px;
+      min-width: 42px;
+      height: 42px;
       border: 0;
       border-radius: 4px;
       background: transparent;
       color: var(--text);
       font-weight: 800;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
     }
 
     .icon-button:hover {
       background: var(--surface-2);
+    }
+
+    .menu-button {
+      gap: 0;
+    }
+
+    .hamburger {
+      width: 22px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .hamburger span {
+      display: block;
+      height: 2px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .back-button {
+      width: auto;
+      min-width: 58px;
+      font-size: 13px;
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      background: rgba(0, 0, 0, 0.46);
+      z-index: 11;
+    }
+
+    body.sidebar-open .sidebar-backdrop {
+      display: block;
+    }
+
+    .side-nav {
+      position: fixed;
+      top: 58px;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-width);
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      padding: 16px 12px;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transform: translateX(calc(-100% - 1px));
+      transition: transform 0.2s ease;
+      box-shadow: 16px 0 36px rgba(0, 0, 0, 0.32);
+    }
+
+    body.sidebar-open .side-nav {
+      transform: translateX(0);
+    }
+
+    .side-brand,
+    .side-link {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 900;
+      text-align: left;
+    }
+
+    .side-brand {
+      background: var(--correct);
+      padding: 0 12px;
+      letter-spacing: 0;
+    }
+
+    .mode-links {
+      display: grid;
+      gap: 8px;
+    }
+
+    .side-link {
+      background: transparent;
+      padding: 0 12px;
+    }
+
+    .side-link:hover,
+    .side-link.active {
+      background: var(--surface-2);
+    }
+
+    .side-link.active {
+      border-left: 4px solid var(--correct);
+      padding-left: 8px;
     }
 
     .toast {
@@ -188,7 +300,7 @@
     }
 
     .home-screen {
-      width: min(1040px, calc(100vw - 24px));
+      width: min(920px, calc(100vw - 24px));
       flex: 1;
       display: none;
       align-items: center;
@@ -269,14 +381,16 @@
 
     .home-panel button {
       width: fit-content;
-      min-width: 150px;
+      min-width: 178px;
+      min-height: 50px;
       border: 0;
       border-radius: 4px;
-      padding: 13px 16px;
+      padding: 14px 18px;
       background: var(--correct);
       color: var(--text);
       font-weight: 900;
       cursor: pointer;
+      font-size: 16px;
     }
 
     .home-panel.casual button {
@@ -593,6 +707,8 @@
 
     .modal-actions button,
     .primary-action {
+      min-height: 46px;
+      min-width: 104px;
       border: 0;
       border-radius: 4px;
       padding: 12px 16px;
@@ -657,21 +773,106 @@
       margin-top: 12px;
     }
 
-    @media (max-width: 420px) {
+    @media (max-width: 720px) {
+      body {
+        padding-bottom: 0;
+      }
+
+      .side-nav {
+        top: 58px;
+        right: auto;
+        bottom: 0;
+        width: min(300px, 82vw);
+        min-height: 0;
+        border-top: 0;
+        border-right: 1px solid var(--border);
+        padding: 16px 12px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+      }
+
+      .side-brand {
+        width: 100%;
+        min-width: 0;
+        min-height: 48px;
+        text-align: left;
+      }
+
+      .mode-links {
+        display: grid;
+        gap: 8px;
+      }
+
+      .side-link {
+        min-height: 48px;
+        text-align: left;
+      }
+
+      .side-link.active {
+        border-left: 4px solid var(--correct);
+        border-bottom: 0;
+        padding-left: 8px;
+      }
+
+      .home-screen {
+        width: min(920px, calc(100vw - 24px));
+        margin-left: 0;
+        padding-bottom: 34px;
+      }
+
+      main {
+        margin-left: 0;
+        padding-bottom: 8px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      header {
+        flex-basis: 104px;
+      }
+
+      .side-nav {
+        top: 104px;
+      }
+
       .header-inner {
         padding: 0 6px;
-        gap: 5px;
+        gap: 4px 6px;
+        height: 104px;
+        grid-template-columns: 1fr auto 1fr;
+        grid-template-rows: 48px 48px;
+      }
+
+      .header-actions.left {
+        grid-column: 1 / 2;
+        grid-row: 2 / 3;
+      }
+
+      .brand {
+        grid-column: 1 / 4;
+        grid-row: 1 / 2;
+        justify-self: center;
+      }
+
+      .header-actions:not(.left) {
+        grid-column: 3 / 4;
+        grid-row: 2 / 3;
       }
 
       h1 {
-        font-size: 26px;
+        font-size: 29px;
       }
 
       .icon-button {
-        min-width: 30px;
-        width: 30px;
-        height: 34px;
+        min-width: 42px;
+        height: 42px;
         font-size: 12px;
+        padding: 0 8px;
+      }
+
+      .back-button {
+        min-width: 48px;
       }
 
       .home-grid {
@@ -681,6 +882,12 @@
       .home-panel {
         min-height: 310px;
         padding: 20px;
+      }
+
+      .home-panel button {
+        width: 100%;
+        min-height: 54px;
+        font-size: 17px;
       }
 
       .mini-board {
@@ -738,13 +945,30 @@
   </style>
 </head>
 <body>
+  <aside class="side-nav" aria-label="Game modes">
+    <button id="homeButton" class="side-brand" type="button">LORDGAMES</button>
+    <nav class="mode-links" aria-label="WORDLORD modes">
+      <button id="sideDailyButton" class="side-link" type="button">Daily</button>
+      <button id="sideCasualButton" class="side-link" type="button">Casual</button>
+    </nav>
+  </aside>
+  <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
   <header>
     <div class="header-inner">
       <div class="header-actions left">
+        <button id="menuButton" class="icon-button menu-button" type="button" title="Menu" aria-label="Open game menu" aria-expanded="false">
+          <span class="hamburger" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+        <button id="backButton" class="icon-button back-button" type="button" title="Back home" aria-label="Back home">Back</button>
         <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
       </div>
       <div class="brand">
-        <h1>Wordle</h1>
+        <h1>WORDLORD</h1>
         <span id="puzzleId" class="puzzle-id"></span>
       </div>
       <div class="header-actions">
@@ -761,7 +985,7 @@
     <div class="home-grid">
       <article class="home-panel daily">
         <div>
-          <h2>Daily Wordle</h2>
+          <h2>Daily WORDLORD</h2>
           <p>One shared puzzle for the day. Everyone gets the same word.</p>
           <div class="mini-board" aria-hidden="true">
             <span class="mini-tile correct">D</span>
@@ -788,6 +1012,7 @@
         </div>
         <button id="casualModeButton" type="button">Play Casual</button>
       </article>
+
     </div>
   </section>
 
@@ -909,8 +1134,12 @@
     let isRevealing = false;
 
     const homeScreen = document.getElementById("homeScreen");
+    const homeButton = document.getElementById("homeButton");
     const dailyModeButton = document.getElementById("dailyModeButton");
     const casualModeButton = document.getElementById("casualModeButton");
+    const sideDailyButton = document.getElementById("sideDailyButton");
+    const sideCasualButton = document.getElementById("sideCasualButton");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
     const boardEl = document.getElementById("board");
     const keyboardEl = document.getElementById("keyboard");
     const toastEl = document.getElementById("toast");
@@ -919,6 +1148,8 @@
     const modalBody = document.getElementById("modalBody");
     const modalActions = document.getElementById("modalActions");
     const modalClose = document.getElementById("modalClose");
+    const menuButton = document.getElementById("menuButton");
+    const backButton = document.getElementById("backButton");
     const customButton = document.getElementById("customButton");
     const themeButton = document.getElementById("themeButton");
     const statsButton = document.getElementById("statsButton");
@@ -965,12 +1196,30 @@
     }
 
     function wireGlobalControls() {
+      menuButton.addEventListener("click", toggleSidebar);
+      sidebarBackdrop.addEventListener("click", closeSidebar);
+      homeButton.addEventListener("click", () => {
+        closeSidebar();
+        goHome();
+      });
+      backButton.addEventListener("click", goHome);
       dailyModeButton.addEventListener("click", startDailyPuzzle);
       casualModeButton.addEventListener("click", startCasualPuzzle);
+      sideDailyButton.addEventListener("click", () => {
+        closeSidebar();
+        startDailyPuzzle();
+      });
+      sideCasualButton.addEventListener("click", () => {
+        closeSidebar();
+        startCasualPuzzle();
+      });
       themeButton.addEventListener("click", toggleTheme);
       customButton.addEventListener("click", showCustomModal);
       statsButton.addEventListener("click", showStatsModal);
       shareButton.addEventListener("click", shareResult);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeSidebar();
+      });
       modalBackdrop.addEventListener("click", (event) => {
         if (event.target === modalBackdrop) closeModal();
       });
@@ -1004,13 +1253,37 @@
       document.body.classList.add("home");
       homeScreen.hidden = false;
       puzzleIdEl.textContent = "Choose";
+      updateModeNav("");
     }
 
     function showUnavailableCustomPuzzle() {
       document.body.classList.add("home");
       homeScreen.hidden = false;
       puzzleIdEl.textContent = "Unavailable";
+      updateModeNav("");
       showToast("Custom puzzle unavailable");
+    }
+
+    function updateModeNav(activeMode) {
+      sideDailyButton.classList.toggle("active", activeMode === "daily");
+      sideCasualButton.classList.toggle("active", activeMode === "casual");
+    }
+
+    function toggleSidebar() {
+      const shouldOpen = !document.body.classList.contains("sidebar-open");
+      document.body.classList.toggle("sidebar-open", shouldOpen);
+      menuButton.setAttribute("aria-expanded", String(shouldOpen));
+      menuButton.setAttribute("aria-label", shouldOpen ? "Close game menu" : "Open game menu");
+    }
+
+    function closeSidebar() {
+      document.body.classList.remove("sidebar-open");
+      menuButton.setAttribute("aria-expanded", "false");
+      menuButton.setAttribute("aria-label", "Open game menu");
+    }
+
+    function goHome() {
+      window.location.href = buildHomeUrl();
     }
 
     async function loadRemoteCustomPuzzle(id) {
@@ -1031,12 +1304,15 @@
     }
 
     function configurePuzzle() {
+      document.body.classList.remove("home");
+      homeScreen.hidden = true;
       puzzleLabel = customWord ? "Custom" : playMode === "casual" ? "Casual" : `#${puzzleId}`;
       puzzleKey = customWord
         ? `custom:${remotePuzzle ? remotePuzzle.id : encodeCustomWord(customWord)}`
         : `${playMode}:${puzzleId}`;
       secretWord = customWord || ANSWERS[positiveModulo(puzzleId, ANSWERS.length)];
       stateKey = `wordle-clone:${puzzleKey}`;
+      updateModeNav(customWord ? "" : playMode);
     }
 
     function positiveModulo(value, size) {
@@ -1627,7 +1903,7 @@
 
       setModalActions([
         { label: "Share", primary: true, onClick: shareResult },
-        ...(state ? [{ label: "New Puzzle", onClick: startNewPuzzle }] : []),
+        ...(canStartNewPuzzle() ? [{ label: "New Puzzle", onClick: startNewPuzzle }] : []),
         { label: "Close", onClick: closeModal }
       ]);
 
@@ -1641,7 +1917,7 @@
       appendStats(modalBody);
       setModalActions([
         { label: "Share", primary: true, onClick: shareResult },
-        { label: "New Puzzle", onClick: startNewPuzzle },
+        ...(canStartNewPuzzle() ? [{ label: "New Puzzle", onClick: startNewPuzzle }] : []),
         { label: "Close", onClick: closeModal }
       ]);
     }
@@ -1828,7 +2104,7 @@
 
     async function shareResult() {
       const text = !state
-        ? `Play Wordle Clone: ${buildHomeUrl()}`
+        ? `Play WORDLORD: ${buildHomeUrl()}`
         : state.gameOver
           ? buildShareText()
           : `Play this puzzle: ${buildPuzzleUrl()}`;
@@ -1857,7 +2133,7 @@
         .map((row) => row.map((status) => SHARE_GLYPHS[status]).join(""))
         .join("\n");
 
-      return `Wordle Clone ${puzzleLabel} ${score}\n${grid}\n${buildPuzzleUrl()}`;
+      return `WORDLORD ${puzzleLabel} ${score}\n${grid}\n${buildPuzzleUrl()}`;
     }
 
     function buildHomeUrl() {
@@ -1943,20 +2219,17 @@
       ]);
     }
 
+    function canStartNewPuzzle() {
+      return playMode === "casual" && !customWord;
+    }
+
     function startNewPuzzle() {
-      if (playMode === "casual") {
-        startCasualPuzzle();
+      if (!canStartNewPuzzle()) {
+        showToast("Daily refreshes tomorrow");
         return;
       }
 
-      const nextPuzzleId = Math.floor(Math.random() * 900000) + 100000;
-      const url = new URL(window.location.href);
-      url.searchParams.delete("word");
-      url.searchParams.delete("puzzle");
-      url.searchParams.delete("mode");
-      url.searchParams.set("day", String(nextPuzzleId));
-      url.hash = "";
-      window.location.href = url.toString();
+      startCasualPuzzle();
     }
 
     function startDailyPuzzle() {
