@@ -1033,6 +1033,58 @@
         flex-basis: 152px;
       }
     }
+
+    @media (max-width: 520px) {
+      body:not(.home) main {
+        min-height: calc(100dvh - 104px - 30px);
+        justify-content: space-between;
+        gap: clamp(8px, 1.4dvh, 14px);
+        padding: clamp(6px, 1.4dvh, 12px) 8px max(6px, env(safe-area-inset-bottom));
+      }
+
+      body:not(.home) #board {
+        width: min(315px, 92vw, 40dvh);
+        gap: clamp(7px, 1.1dvh, 10px);
+      }
+
+      body:not(.home) .row {
+        gap: clamp(7px, 1.1dvh, 10px);
+      }
+
+      body:not(.home) .tile {
+        font-size: clamp(1.45rem, 6vw, 1.9rem);
+      }
+
+      body:not(.home) #keyboard {
+        margin-top: 0;
+        gap: clamp(4px, 0.8dvh, 6px);
+      }
+
+      body:not(.home) .key-row {
+        gap: clamp(3px, 1vw, 4px);
+      }
+
+      body:not(.home) button.key {
+        width: clamp(24px, 6.7vw, 26px);
+        height: clamp(34px, 4.9dvh, 40px);
+        flex-basis: clamp(24px, 6.7vw, 26px);
+      }
+
+      body:not(.home) button.key.wide {
+        width: clamp(38px, 10.8vw, 42px);
+        flex-basis: clamp(38px, 10.8vw, 42px);
+      }
+
+      body:not(.home) button.key.space {
+        width: clamp(152px, 43vw, 168px);
+        flex-basis: clamp(152px, 43vw, 168px);
+      }
+
+      body:not(.home) .site-credit {
+        font-size: 11px;
+        padding: 3px 0 max(3px, env(safe-area-inset-bottom));
+      }
+    }
   </style>
 </head>
 <body>
