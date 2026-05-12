@@ -576,8 +576,8 @@
 
   <footer class="site-credit">made by lordGami</footer>
 
-  <script src="supabase-config.js"></script>
-  <script src="shared-history.js"></script>
+  <script src="supabase-config.js?v=20260512-2"></script>
+  <script src="shared-history.js?v=20260512-2"></script>
   <script>
     "use strict";
 
@@ -686,7 +686,7 @@
     }
 
     async function initAccountSystem() {
-      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled() || typeof window.WordleBackend.initPlayerAuth !== "function") {
         profileWrap.hidden = true;
         return;
       }
@@ -767,6 +767,11 @@
         return;
       }
 
+      if (typeof window.WordleBackend.updatePlayerUsername !== "function") {
+        profileFeedback.textContent = "Refresh the page and try again.";
+        return;
+      }
+
       const username = profileUsernameInput.value.trim().replace(/\s+/g, " ");
       profileUsernameInput.value = username;
 
@@ -806,7 +811,7 @@
       publicLeaderboardStatus.textContent = "Loading leaderboard...";
       publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Loading...</td></tr>`;
 
-      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled() || typeof window.WordleBackend.fetchPublicLeaderboard !== "function") {
         publicLeaderboardStatus.textContent = "Leaderboard is not ready yet.";
         publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">No leaderboard yet.</td></tr>`;
         return;
