@@ -15,7 +15,7 @@
       --muted: #d7dadc;
       --empty: #3a3a3c;
       --filled: #565758;
-      --correct: #538d4e;
+      --correct: #52c421;
       --present: #b59f3b;
       --absent: #3a3a3c;
       --key: #818384;
@@ -327,6 +327,11 @@
       display: none;
     }
 
+    body.sidebar-open .menu-button {
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .side-brand,
     .side-link {
       width: 100%;
@@ -348,11 +353,6 @@
     .mode-links {
       display: grid;
       gap: 8px;
-    }
-
-    .account-link {
-      margin-top: auto;
-      margin-bottom: 58px;
     }
 
     .side-link {
@@ -1286,8 +1286,8 @@
       <button id="sideDailyButton" class="side-link" type="button">Daily</button>
       <button id="sideCasualButton" class="side-link" type="button">Casual</button>
       <button id="sideCluelessButton" class="side-link" type="button">Cluelord</button>
+      <button id="sideLeaderboardButton" class="side-link" type="button">Leaderboard</button>
     </nav>
-    <button id="accountButton" class="side-link account-link" type="button">Sign in</button>
     <button id="themeButton" class="theme-toggle" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
   </aside>
   <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
@@ -1514,6 +1514,7 @@
     const sideDailyButton = document.getElementById("sideDailyButton");
     const sideCasualButton = document.getElementById("sideCasualButton");
     const sideCluelessButton = document.getElementById("sideCluelessButton");
+    const sideLeaderboardButton = document.getElementById("sideLeaderboardButton");
     const sidebarBackdrop = document.getElementById("sidebarBackdrop");
     const boardEl = document.getElementById("board");
     const keyboardEl = document.getElementById("keyboard");
@@ -1527,7 +1528,6 @@
     const backButton = document.getElementById("backButton");
     const customButton = document.getElementById("customButton");
     const themeButton = document.getElementById("themeButton");
-    const accountButton = document.getElementById("accountButton");
     const accountPrompt = document.getElementById("accountPrompt");
     const promptSignInButton = document.getElementById("promptSignInButton");
     const promptCloseButton = document.getElementById("promptCloseButton");
@@ -1620,10 +1620,9 @@
         closeSidebar();
         openCluelessGame();
       });
-      accountButton.addEventListener("click", async () => {
+      sideLeaderboardButton.addEventListener("click", () => {
         closeSidebar();
-        await refreshAccountSession();
-        toggleProfileMenu(true);
+        openLeaderboard();
       });
       promptSignInButton.addEventListener("click", startGoogleSignIn);
       promptCloseButton.addEventListener("click", dismissAccountPrompt);
@@ -1682,7 +1681,6 @@
 
     async function initAccountSystem() {
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
-        accountButton.hidden = true;
         accountPrompt.hidden = true;
         profileWrap.hidden = true;
         return;
@@ -1729,9 +1727,6 @@
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) return;
       activePlayerSession = session;
       accountPrompt.hidden = true;
-      accountButton.textContent = session
-        ? "Account"
-        : "Sign in";
 
       const displayName = session ? window.WordleBackend.getPlayerDisplayName(session) : "Guest";
       const email = session && session.user && session.user.email ? session.user.email : "";
@@ -1869,6 +1864,13 @@
 
     function openCluelessGame() {
       const url = new URL("clueless.html", window.location.href);
+      url.search = "";
+      url.hash = "";
+      window.location.href = url.toString();
+    }
+
+    function openLeaderboard() {
+      const url = new URL("admin.html", window.location.href);
       url.search = "";
       url.hash = "";
       window.location.href = url.toString();
