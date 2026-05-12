@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clueless</title>
+  <style>
+    :root {
+      --bg: #131617;
+      --surface: #1b1e20;
+      --surface-2: #24282b;
+      --text: #f8f8f8;
+      --muted: #9ca3aa;
+      --border: #555d64;
+      --input-bg: #222629;
+      --correct: #52c421;
+      --warm: #f08a1a;
+      --cold: #df3434;
+      --danger: #df3434;
+      --focus: #85c0f9;
+      color-scheme: dark;
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f7f8;
+      --surface: #ffffff;
+      --surface-2: #eceff1;
+      --text: #111315;
+      --muted: #4d545c;
+      --border: #d7dadd;
+      --input-bg: #ffffff;
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    header {
+      width: 100%;
+      min-height: 136px;
+      background: transparent;
+    }
+
+    .header-inner {
+      width: 100%;
+      min-height: 136px;
+      margin: 0 auto;
+      padding: 0;
+      position: relative;
+    }
+
+    h1 {
+      position: absolute;
+      top: 52px;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      text-align: center;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 64px;
+      line-height: 0.9;
+      letter-spacing: 0;
+      white-space: nowrap;
+      font-weight: 900;
+    }
+
+    .header-actions {
+      position: absolute;
+      left: 16px;
+      top: 76px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .header-actions.right {
+      left: auto;
+      right: 40px;
+      top: 62px;
+      justify-content: flex-end;
+    }
+
+    .icon-button,
+    .text-button {
+      min-width: 44px;
+      height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text);
+      font-weight: 900;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+    }
+
+    .text-button {
+      border-color: transparent;
+      font-size: 0;
+    }
+
+    .menu-link {
+      position: relative;
+      min-width: 26px;
+      height: 26px;
+      font-size: 0;
+      line-height: 1;
+    }
+
+    .menu-link::before {
+      content: "";
+      width: 17px;
+      height: 13px;
+      background:
+        linear-gradient(var(--muted), var(--muted)) 0 0 / 17px 2px no-repeat,
+        linear-gradient(var(--muted), var(--muted)) 0 50% / 17px 2px no-repeat,
+        linear-gradient(var(--muted), var(--muted)) 0 100% / 17px 2px no-repeat;
+      border-radius: 999px;
+    }
+
+    main {
+      width: min(556px, calc(100vw - 34px));
+      flex: 1;
+      padding: 26px 0 48px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .search-panel,
+    .results-panel {
+      background: transparent;
+    }
+
+    .status-grid {
+      display: none;
+    }
+
+    .stat {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-2);
+      padding: 12px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+
+    .guess-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 45px 45px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .search-box {
+      min-width: 0;
+      min-height: 45px;
+      border: 2px solid var(--border);
+      border-radius: 5px;
+      background: var(--input-bg);
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 0 11px;
+    }
+
+    .search-box:focus-within {
+      border-color: #8d969e;
+    }
+
+    .search-box input:focus-visible {
+      outline: 0;
+    }
+
+    .search-icon {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      border: 3px solid var(--muted);
+      border-radius: 50%;
+      justify-self: center;
+    }
+
+    .search-icon::after {
+      content: "";
+      position: absolute;
+      width: 9px;
+      height: 3px;
+      right: -7px;
+      bottom: -4px;
+      border-radius: 999px;
+      background: var(--muted);
+      transform: rotate(45deg);
+    }
+
+    .guess-counter {
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    input {
+      width: 100%;
+      min-height: 41px;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 0;
+      font-size: 18px;
+      font-weight: 800;
+      text-transform: lowercase;
+    }
+
+    input::placeholder {
+      color: var(--muted);
+    }
+
+    .guess-form .primary-action {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .secondary-action {
+      min-height: 45px;
+      border: 0;
+      border-radius: 5px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-weight: 900;
+      padding: 0;
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    .hint-action {
+      font-size: 0;
+    }
+
+    .hint-icon {
+      width: 24px;
+      height: 24px;
+      display: block;
+      stroke: currentColor;
+      stroke-width: 2.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .hint-icon .hint-glow {
+      stroke-width: 2;
+    }
+
+    .new-game-action {
+      font-size: 0;
+    }
+
+    .new-game-icon {
+      width: 23px;
+      height: 23px;
+      display: block;
+      stroke: currentColor;
+      stroke-width: 2.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    button:disabled,
+    input:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .message {
+      color: var(--muted);
+      min-height: 16px;
+      margin: 8px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0.75;
+    }
+
+    .guess-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .guess-row {
+      --fill: 0%;
+      --bar-color: var(--danger);
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 96px;
+      align-items: center;
+      gap: 12px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--surface);
+      min-height: 43px;
+      padding: 0 14px;
+      overflow: visible;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.01);
+    }
+
+    .guess-row::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--fill);
+      min-width: 8px;
+      border-radius: 6px 0 0 6px;
+      background: var(--bar-color);
+      z-index: 0;
+    }
+
+    .guess-row.best-row::after {
+      content: "";
+      position: absolute;
+      left: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-left: 10px solid var(--text);
+    }
+
+    .guess-word {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 21px;
+      font-weight: 900;
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
+
+    .guess-rank {
+      position: relative;
+      z-index: 1;
+      justify-self: end;
+      min-width: 74px;
+      text-align: center;
+      font-size: 21px;
+      font-weight: 900;
+      color: white;
+      text-shadow: 0 1px 0 #0b0b0b;
+    }
+
+    .hint-row {
+      opacity: 0.98;
+    }
+
+    .hint-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-left: 8px;
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 18px 8px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.58);
+      z-index: 20;
+      padding: 18px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      position: relative;
+      width: min(92vw, 420px);
+      max-height: min(88vh, 680px);
+      overflow: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 22px;
+      box-shadow: 0 12px 46px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 4px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .modal h2 {
+      margin: 0 34px 12px 0;
+      font-size: 24px;
+    }
+
+    .modal p,
+    .modal li {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .modal-actions .primary-action,
+    .modal-actions .text-button {
+      position: static;
+      width: auto;
+      height: 42px;
+      min-width: 96px;
+      overflow: visible;
+      clip: auto;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      padding: 0 16px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .modal-actions .primary-action {
+      border-color: var(--correct);
+      background: var(--correct);
+      color: white;
+    }
+
+    .site-credit {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 0 10px;
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      header,
+      .header-inner {
+        min-height: 118px;
+      }
+
+      h1 {
+        top: 46px;
+        font-size: 56px;
+      }
+
+      .header-actions {
+        left: 12px;
+        top: 66px;
+      }
+
+      .header-actions.right {
+        right: 14px;
+        top: 48px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      header,
+      .header-inner {
+        min-height: 88px;
+      }
+
+      .header-actions {
+        left: 8px;
+        top: 48px;
+        gap: 5px;
+      }
+
+      .icon-button,
+      .text-button {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 8px;
+        font-size: 16px;
+      }
+
+      .menu-link::before {
+        width: 23px;
+        height: 15px;
+        background:
+          linear-gradient(var(--muted), var(--muted)) 0 0 / 23px 3px no-repeat,
+          linear-gradient(var(--muted), var(--muted)) 0 50% / 23px 3px no-repeat,
+          linear-gradient(var(--muted), var(--muted)) 0 100% / 23px 3px no-repeat;
+      }
+
+      .header-actions.right {
+        right: 8px;
+        top: 32px;
+      }
+
+      h1 {
+        top: 26px;
+        font-size: 40px;
+      }
+
+      main {
+        width: min(556px, calc(100vw - 22px));
+        padding-top: 12px;
+      }
+
+      .guess-form {
+        grid-template-columns: minmax(0, 1fr) 45px 45px;
+      }
+
+      .secondary-action {
+        min-height: 45px;
+        width: auto;
+      }
+
+      .search-box {
+        min-height: 45px;
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+      }
+
+      input {
+        min-height: 41px;
+        font-size: 17px;
+      }
+
+      .guess-counter {
+        font-size: 18px;
+      }
+
+      .guess-row {
+        grid-template-columns: minmax(0, 1fr) 82px;
+        min-height: 43px;
+      }
+
+      .guess-word,
+      .guess-rank {
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      header,
+      .header-inner {
+        min-height: 84px;
+      }
+
+      .header-actions {
+        gap: 4px;
+      }
+
+      .icon-button,
+      .text-button {
+        min-width: 34px;
+        height: 34px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      .guess-form {
+        grid-template-columns: minmax(0, 1fr) 42px 42px;
+      }
+
+      .search-box {
+        padding: 0 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-actions">
+        <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
+        <a class="text-button menu-link" href="index.html" title="Home" aria-label="Home">=</a>
+      </div>
+      <h1>Clueless</h1>
+      <div class="header-actions right">
+        <button id="helpButton" class="icon-button" type="button" title="How to play" aria-label="How to play">?</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="status-grid" aria-label="Game status">
+      <div class="stat">
+        <strong id="bestRank">-</strong>
+        <span>Best</span>
+      </div>
+      <div class="stat">
+        <strong id="hintCount">0</strong>
+        <span>Hints</span>
+      </div>
+    </section>
+
+    <section class="search-panel">
+      <form id="guessForm" class="guess-form">
+        <label class="search-box" aria-label="Guess a word">
+          <span class="search-icon" aria-hidden="true"></span>
+          <input id="guessInput" type="text" autocomplete="off" spellcheck="false" placeholder="Type a word" required disabled />
+          <span id="guessCount" class="guess-counter">#0</span>
+        </label>
+        <button id="guessButton" class="primary-action" type="submit" disabled>Guess</button>
+        <button id="hintButton" class="secondary-action hint-action" type="button" title="Hint" aria-label="Hint" disabled>
+          <svg class="hint-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M9 18h6" />
+            <path d="M10 22h4" />
+            <path d="M8.2 14.2c-1.25-1.08-2.05-2.67-2.05-4.45A5.85 5.85 0 0 1 12 3.9a5.85 5.85 0 0 1 5.85 5.85c0 1.78-.8 3.37-2.05 4.45-.72.62-1.05 1.15-1.2 2.05H9.4c-.15-.9-.48-1.43-1.2-2.05Z" />
+            <path class="hint-glow" d="M12 1.8v-.8" />
+            <path class="hint-glow" d="M4.9 4.2l-.55-.55" />
+            <path class="hint-glow" d="M19.1 4.2l.55-.55" />
+          </svg>
+        </button>
+        <button id="newGameButton" class="secondary-action new-game-action" type="button" title="New game" aria-label="Start a new game with a different word">
+          <svg class="new-game-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <path d="M21 3v6h-6" />
+          </svg>
+        </button>
+      </form>
+      <p id="message" class="message">Loading semantic API...</p>
+    </section>
+
+    <section class="results-panel">
+      <div id="guessList" class="guess-list">
+        <div class="empty">Your guesses will appear here.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-credit">made by lordGami</footer>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button id="modalClose" class="modal-close" type="button" aria-label="Close">X</button>
+      <h2 id="modalTitle"></h2>
+      <div id="modalBody"></div>
+      <div id="modalActions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const DAY_MS = 86400000;
+    const BASE_DAY = Date.UTC(2024, 0, 1);
+    const DATAMUSE_API = "https://api.datamuse.com/words";
+    const AIRBALL_SOUND_FILE = "fahhh_KcgAXfs.mp3";
+    const UNKNOWN_RANK = 50000;
+    const MAX_RELATED = 1000;
+    const GREEN_RANK_LIMIT = 500;
+    const GOOD_RANK_LIMIT = 3000;
+    const OPENING_HINT_TARGET = 36000;
+    const RED_ZONE_HINT_RATIO = 0.35;
+    const NORMAL_HINT_RATIO = 0.7;
+    const DOUBLE_DIGIT_HINT_RATIO = 0.86;
+    const themeKey = "wordle-clone:theme";
+    const helpSeenKey = "clueless-help-seen";
+    const stateKey = `clueless:${getPuzzleId()}`;
+    const answerWords = [
+      "banana", "camera", "forest", "planet", "school", "doctor", "coffee", "garden", "window", "castle",
+      "music", "pencil", "island", "market", "summer", "winter", "silver", "bridge", "button", "orange",
+      "family", "pirate", "rocket", "animal", "museum", "jungle", "desert", "mirror", "kitchen", "soccer",
+      "thunder", "diamond", "library", "airport", "monster", "village", "teacher", "blanket", "machine", "holiday"
+    ];
+
+    const puzzleId = getPuzzleId();
+    const answer = answerWords[positiveModulo(puzzleId, answerWords.length)];
+    const relatedByWord = new Map();
+    const reverseCache = new Map();
+
+    let rows = loadState();
+    let solved = rows.some((row) => row.word === answer);
+    let loading = true;
+    let audioContext = null;
+    let airballSoundBuffer = null;
+    let airballSoundBufferPromise = null;
+    let pendingHint = null;
+
+    const themeButton = document.getElementById("themeButton");
+    const helpButton = document.getElementById("helpButton");
+    const guessForm = document.getElementById("guessForm");
+    const guessInput = document.getElementById("guessInput");
+    const guessButton = document.getElementById("guessButton");
+    const hintButton = document.getElementById("hintButton");
+    const newGameButton = document.getElementById("newGameButton");
+    const messageEl = document.getElementById("message");
+    const guessList = document.getElementById("guessList");
+    const bestRankEl = document.getElementById("bestRank");
+    const guessCountEl = document.getElementById("guessCount");
+    const hintCountEl = document.getElementById("hintCount");
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalClose = document.getElementById("modalClose");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalActions = document.getElementById("modalActions");
+
+    initTheme();
+    wireControls();
+    render();
+    loadRelatedWords();
+
+    function wireControls() {
+      themeButton.addEventListener("click", toggleTheme);
+      helpButton.addEventListener("click", showHelp);
+      hintButton.addEventListener("click", giveHint);
+      newGameButton.addEventListener("click", startNewPuzzle);
+      guessForm.addEventListener("submit", submitGuess);
+      guessInput.addEventListener("input", () => {
+        guessInput.value = cleanWord(guessInput.value);
+      });
+      modalBackdrop.addEventListener("click", (event) => {
+        if (event.target === modalBackdrop) closeModal();
+      });
+      modalClose.addEventListener("click", closeModal);
+    }
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem(themeKey);
+      setTheme(savedTheme || "dark");
+    }
+
+    function setTheme(theme) {
+      const nextTheme = theme === "light" ? "light" : "dark";
+      document.documentElement.dataset.theme = nextTheme;
+      themeButton.textContent = nextTheme === "light" ? "☀" : "☾";
+      themeButton.title = nextTheme === "light" ? "Switch to dark mode" : "Switch to light mode";
+    }
+
+    function toggleTheme() {
+      const nextTheme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      localStorage.setItem(themeKey, nextTheme);
+      setTheme(nextTheme);
+    }
+
+    async function loadRelatedWords() {
+      try {
+        const related = await fetchRelated(answer);
+        related.forEach((item, index) => {
+          const word = apiWord(item.word);
+          if (word && word !== answer && !relatedByWord.has(word)) {
+            relatedByWord.set(word, {
+              word,
+              rank: rankFromIndex(index),
+              score: item.score || 0
+            });
+          }
+        });
+
+        loading = false;
+        setEnabled(!solved);
+        messageEl.textContent = solved ? `Solved. The word was ${answer.toUpperCase()}.` : "Lower numbers are closer. 1 is the hidden word.";
+
+        if (!localStorage.getItem(helpSeenKey)) {
+          showHelp();
+          localStorage.setItem(helpSeenKey, "1");
+        }
+      } catch (error) {
+        loading = false;
+        setEnabled(false);
+        messageEl.textContent = "Semantic API unavailable. Try again later.";
+        console.warn("Unable to load semantic words.", error);
+      }
+    }
+
+    async function fetchRelated(word) {
+      const url = new URL(DATAMUSE_API);
+      url.searchParams.set("ml", word);
+      url.searchParams.set("max", String(MAX_RELATED));
+      const response = await fetch(url.toString());
+
+      if (!response.ok) {
+        throw new Error(`Datamuse returned ${response.status}`);
+      }
+
+      return response.json();
+    }
+
+    async function submitGuess(event) {
+      event.preventDefault();
+      if (loading || solved) return;
+      primeAudio();
+
+      const word = cleanWord(guessInput.value);
+      if (!word) {
+        setMessage("Type a word first.");
+        focusGuessInput();
+        return;
+      }
+
+      if (rows.some((row) => row.word === word)) {
+        setMessage("Already guessed.");
+        guessInput.value = "";
+        focusGuessInput();
+        return;
+      }
+
+      setMessage("Calculating...");
+      setBusy(true);
+      const rank = await scoreGuess(word);
+      setBusy(false);
+
+      rows.unshift({ word, rank, kind: "guess", at: Date.now() });
+      guessInput.value = "";
+
+      if (rank === 1) {
+        solved = true;
+        playGuessTone(true);
+        setEnabled(false);
+        setMessage(`Solved. The word was ${answer.toUpperCase()}.`);
+        showSolvedModal();
+      } else {
+        if (isAirball(rank)) {
+          playAirballSound();
+        } else {
+          playGuessTone(false);
+        }
+        setMessage(getResultMessage(word, rank));
+      }
+
+      saveState();
+      render();
+      focusGuessInput();
+    }
+
+    async function scoreGuess(word) {
+      if (word === answer) return 1;
+
+      const direct = relatedByWord.get(word);
+      let rank = direct ? direct.rank : UNKNOWN_RANK;
+
+      const reverse = await scoreReverse(word);
+      if (reverse) {
+        rank = Math.min(rank, reverse);
+      }
+
+      return rank;
+    }
+
+    async function scoreReverse(word) {
+      if (reverseCache.has(word)) return reverseCache.get(word);
+
+      try {
+        const related = await fetchRelated(word);
+        const index = related.findIndex((item) => apiWord(item.word) === answer);
+        const rank = index >= 0 ? rankFromIndex(index) : null;
+        reverseCache.set(word, rank);
+        return rank;
+      } catch (error) {
+        reverseCache.set(word, null);
+        return null;
+      }
+    }
+
+    function giveHint() {
+      if (loading || solved) return;
+      primeAudio();
+
+      const hint = chooseHint();
+      if (!hint) {
+        setMessage(getHintUnavailableMessage());
+        focusGuessInput();
+        return;
+      }
+
+      if (hint.revealsAnswer) {
+        showRevealHintWarning();
+        return;
+      }
+
+      if (hasUsedHint()) {
+        addHintRow(hint);
+      } else {
+        showHintConfirm(hint);
+      }
+    }
+
+    function addHintRow(hint) {
+      rows.unshift({ word: hint.word, rank: hint.rank, kind: "hint", at: Date.now() });
+      setMessage(`Hint: ${hint.word.toUpperCase()} is ${formatRank(hint.rank)}.`);
+      saveState();
+      render();
+      focusGuessInput();
+    }
+
+    function chooseHint() {
+      const guessed = new Set(rows.map((row) => row.word));
+      const candidates = [...relatedByWord.values()]
+        .filter((item) => !guessed.has(item.word) && item.word !== answer)
+        .sort((a, b) => a.rank - b.rank);
+
+      const bestRow = getBestShownRank();
+      if (!candidates.length) {
+        if (!guessed.has(answer)) {
+          return { word: answer, rank: 1, revealsAnswer: true };
+        }
+
+        return null;
+      }
+
+      if (!Number.isFinite(bestRow) || bestRow >= UNKNOWN_RANK) {
+        return closestToRank(candidates, OPENING_HINT_TARGET);
+      }
+
+      const betterThanBest = candidates.filter((item) => item.rank < bestRow);
+      if (!betterThanBest.length) {
+        return !guessed.has(answer) ? { word: answer, rank: 1, revealsAnswer: true } : null;
+      }
+
+      if (!hasGoodShownRow()) {
+        return closestToRank(betterThanBest, getRedZoneHintTarget(bestRow));
+      }
+
+      return chooseSpacedHint(betterThanBest, bestRow);
+    }
+
+    function closestToRank(candidates, target) {
+      return candidates.reduce((best, item) => (
+        Math.abs(item.rank - target) < Math.abs(best.rank - target) ? item : best
+      ), candidates[0]);
+    }
+
+    function getHintUnavailableMessage() {
+      const bestRow = getBestShownRank();
+      if (Number.isFinite(bestRow) && bestRow < UNKNOWN_RANK) {
+        return "No better hint is left near your best row.";
+      }
+
+      return "No useful hint found yet.";
+    }
+
+    function getResultMessage(word, rank) {
+      if (isAirball(rank)) return `${word.toUpperCase()} is an airball.`;
+      return `${word.toUpperCase()} is #${rank}.`;
+    }
+
+    function formatRank(rank) {
+      return isAirball(rank) ? "airball" : String(rank);
+    }
+
+    function isAirball(rank) {
+      return rank >= UNKNOWN_RANK;
+    }
+
+    function render() {
+      const guesses = rows.filter((row) => row.kind === "guess");
+      const hints = rows.filter((row) => row.kind === "hint");
+      const best = getBestRank();
+
+      bestRankEl.textContent = Number.isFinite(best) ? `#${best}` : "-";
+      guessCountEl.textContent = `#${getGuessCount()}`;
+      hintCountEl.textContent = String(hints.length);
+
+      guessList.innerHTML = "";
+
+      if (!rows.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "Your guesses will appear here.";
+        guessList.appendChild(empty);
+        return;
+      }
+
+      getSortedRows().forEach((row, index) => {
+        const item = document.createElement("div");
+        item.className = `guess-row ${row.kind === "hint" ? "hint-row" : ""} ${index === 0 ? "best-row" : ""}`;
+        item.style.setProperty("--fill", `${getFillPercent(row.rank)}%`);
+        item.style.setProperty("--bar-color", getBarColor(row.rank));
+
+        const word = document.createElement("div");
+        word.className = "guess-word";
+        word.textContent = row.word;
+
+        if (row.kind === "hint") {
+          const label = document.createElement("span");
+          label.className = "hint-label";
+          label.textContent = "Hint";
+          word.appendChild(label);
+        }
+
+        const rank = document.createElement("div");
+        rank.className = `guess-rank ${getRankClass(row.rank)}`;
+        rank.textContent = formatRank(row.rank);
+
+        item.append(word, rank);
+        guessList.appendChild(item);
+      });
+    }
+
+    function getBestRank() {
+      const ranks = rows.filter((row) => row.kind === "guess").map((row) => row.rank);
+      return ranks.length ? Math.min(...ranks) : Infinity;
+    }
+
+    function getGuessCount() {
+      return rows.filter((row) => row.kind === "guess" || row.kind === "hint").length;
+    }
+
+    function getBestShownRank() {
+      const ranks = rows.map((row) => row.rank).filter(Number.isFinite);
+      return ranks.length ? Math.min(...ranks) : Infinity;
+    }
+
+    function hasGoodShownRow() {
+      return rows.some((row) => Number.isFinite(row.rank) && row.rank <= GOOD_RANK_LIMIT);
+    }
+
+    function hasUsedHint() {
+      return rows.some((row) => row.kind === "hint");
+    }
+
+    function getRedZoneHintTarget(rank) {
+      const lowerTarget = Math.floor(rank * RED_ZONE_HINT_RATIO);
+      return Math.max(GREEN_RANK_LIMIT + 1, Math.min(GOOD_RANK_LIMIT, lowerTarget));
+    }
+
+    function chooseSpacedHint(candidates, currentRank) {
+      const maxAllowedRank = currentRank - getMinimumHintDrop(currentRank);
+      const spacedCandidates = candidates.filter((item) => item.rank <= maxAllowedRank);
+      const pool = spacedCandidates.length ? spacedCandidates : candidates;
+      return closestToRank(pool, getNormalHintTarget(currentRank));
+    }
+
+    function getNormalHintTarget(rank) {
+      if (rank < 100) return Math.max(2, Math.floor(rank * DOUBLE_DIGIT_HINT_RATIO));
+      return Math.max(2, Math.floor(rank * NORMAL_HINT_RATIO));
+    }
+
+    function getMinimumHintDrop(rank) {
+      if (rank < 100) return Math.max(2, Math.round(rank * 0.08));
+      if (rank <= GREEN_RANK_LIMIT) return Math.max(12, Math.round(rank * 0.15));
+      if (rank <= GOOD_RANK_LIMIT) return Math.max(80, Math.round(rank * 0.18));
+      return Math.max(250, Math.round(rank * 0.2));
+    }
+
+    function getRankClass(rank) {
+      if (rank === 1) return "hot";
+      if (rank <= GREEN_RANK_LIMIT) return "hot";
+      if (rank <= GOOD_RANK_LIMIT) return "warm";
+      if (rank < UNKNOWN_RANK) return "cold";
+      return "miss";
+    }
+
+    function getFillPercent(rank) {
+      if (rank === 1) return 100;
+      if (rank >= UNKNOWN_RANK) return 1;
+      const scaled = Math.round(100 / (1 + Math.pow(rank / 400, 1.6)));
+      return Math.max(1, Math.min(100, scaled));
+    }
+
+    function getBarColor(rank) {
+      if (rank <= GREEN_RANK_LIMIT) return "var(--correct)";
+      if (rank <= GOOD_RANK_LIMIT) return "var(--warm)";
+      return "var(--danger)";
+    }
+
+    function rankFromIndex(index) {
+      return Math.max(2, Math.round(10 + Math.pow(index + 1, 1.45) * 2));
+    }
+
+    function setEnabled(enabled) {
+      guessInput.disabled = !enabled;
+      guessButton.disabled = !enabled;
+      hintButton.disabled = !enabled;
+      if (enabled) guessInput.focus();
+    }
+
+    function setBusy(busy) {
+      guessButton.disabled = busy;
+      hintButton.disabled = busy;
+      guessInput.disabled = busy;
+      guessButton.textContent = busy ? "..." : "Guess";
+      if (!busy && !solved) {
+        focusGuessInput();
+      }
+    }
+
+    function primeAudio() {
+      const context = getAudioContext();
+      if (context && context.state === "suspended") {
+        context.resume().catch(() => {});
+      }
+      warmAirballSound();
+    }
+
+    function getAudioContext() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        if (!audioContext) audioContext = new AudioContextClass();
+        return audioContext;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function warmAirballSound() {
+      const context = getAudioContext();
+      if (!context) return;
+      loadAirballSound(context).catch(() => {});
+    }
+
+    function playAirballSound() {
+      const context = getAudioContext();
+      if (!context) {
+        playFallbackAirballSound();
+        return;
+      }
+
+      const play = () => {
+        loadAirballSound(context)
+          .then((buffer) => scheduleSoundBuffer(context, buffer))
+          .catch(playFallbackAirballSound);
+      };
+
+      if (context.state === "suspended") {
+        context.resume().then(play).catch(playFallbackAirballSound);
+        return;
+      }
+
+      play();
+    }
+
+    function loadAirballSound(context) {
+      if (airballSoundBuffer) return Promise.resolve(airballSoundBuffer);
+
+      if (!airballSoundBufferPromise) {
+        airballSoundBufferPromise = fetch(AIRBALL_SOUND_FILE)
+          .then((response) => {
+            if (!response.ok) throw new Error("Airball sound failed to load.");
+            return response.arrayBuffer();
+          })
+          .then((arrayBuffer) => decodeSoundData(context, arrayBuffer))
+          .then((buffer) => {
+            airballSoundBuffer = buffer;
+            return buffer;
+          })
+          .catch((error) => {
+            airballSoundBufferPromise = null;
+            throw error;
+          });
+      }
+
+      return airballSoundBufferPromise;
+    }
+
+    function decodeSoundData(context, arrayBuffer) {
+      return new Promise((resolve, reject) => {
+        const data = arrayBuffer.slice(0);
+        const promise = context.decodeAudioData(data, resolve, reject);
+        if (promise && typeof promise.then === "function") {
+          promise.then(resolve).catch(reject);
+        }
+      });
+    }
+
+    function scheduleSoundBuffer(context, buffer) {
+      const source = context.createBufferSource();
+      const gain = context.createGain();
+      source.buffer = buffer;
+      gain.gain.setValueAtTime(0.82, context.currentTime);
+      source.connect(gain);
+      gain.connect(context.destination);
+      source.start(context.currentTime + 0.01);
+    }
+
+    function playFallbackAirballSound() {
+      const sound = new Audio(AIRBALL_SOUND_FILE);
+      sound.volume = 0.82;
+      sound.play().catch(() => playGuessTone(false));
+    }
+
+    function playGuessTone(isCorrect) {
+      const context = getAudioContext();
+      if (!context) return;
+
+      if (context.state === "suspended") {
+        context.resume()
+          .then(() => scheduleGuessTone(context, isCorrect))
+          .catch(() => {});
+        return;
+      }
+
+      scheduleGuessTone(context, isCorrect);
+    }
+
+    function scheduleGuessTone(context, isCorrect) {
+      const notes = isCorrect
+        ? [{ frequency: 523, duration: 0.09 }, { frequency: 659, duration: 0.09 }, { frequency: 880, duration: 0.16 }]
+        : [{ frequency: 330, duration: 0.1 }, { frequency: 220, duration: 0.16 }];
+      let start = context.currentTime + 0.01;
+
+      notes.forEach((note) => {
+        playTone(context, note.frequency, start, note.duration, isCorrect ? "triangle" : "square");
+        start += note.duration + 0.035;
+      });
+    }
+
+    function playTone(context, frequency, start, duration, type) {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(0.001, start);
+      gain.gain.linearRampToValueAtTime(0.14, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.03);
+    }
+
+    function getSortedRows() {
+      return [...rows].sort((a, b) => {
+        if (a.rank !== b.rank) return a.rank - b.rank;
+        if (a.kind !== b.kind) return a.kind === "guess" ? -1 : 1;
+        return a.at - b.at;
+      });
+    }
+
+    function focusGuessInput() {
+      if (!guessInput.disabled) {
+        requestAnimationFrame(() => guessInput.focus());
+      }
+    }
+
+    function setMessage(message) {
+      messageEl.textContent = message;
+    }
+
+    function cleanWord(value) {
+      return String(value || "").toLowerCase().replace(/[^a-z]/g, "").slice(0, 24);
+    }
+
+    function apiWord(value) {
+      const word = String(value || "").toLowerCase();
+      return /^[a-z]+$/.test(word) ? word : "";
+    }
+
+    function saveState() {
+      localStorage.setItem(stateKey, JSON.stringify(rows));
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(stateKey));
+        if (!Array.isArray(saved)) return [];
+
+        return saved
+          .filter((row) => row && /^[a-z]{2,24}$/.test(row.word) && Number.isFinite(row.rank))
+          .slice(0, 200);
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function getPuzzleId() {
+      const params = new URLSearchParams(window.location.search);
+      const requested = Number(params.get("day"));
+
+      if (Number.isInteger(requested) && requested >= 0) {
+        return requested;
+      }
+
+      return Math.floor((Date.now() - BASE_DAY) / DAY_MS);
+    }
+
+    function positiveModulo(value, size) {
+      return ((value % size) + size) % size;
+    }
+
+    function showHelp() {
+      openModal("How to Play");
+      const list = document.createElement("ul");
+      [
+        "Guess any word.",
+        "The number shows how close your guess is to the hidden word.",
+        "Lower numbers are better. #1 is the answer.",
+        "The first hint asks for confirmation. Later hints do not.",
+        "If every row is still red, the hint makes a bigger jump toward orange or green.",
+        "Otherwise, hints aim for a meaningful lower number instead of tiny steps.",
+        "If the only hint left would reveal the answer, you get a warning first."
+      ].forEach((text) => {
+        const item = document.createElement("li");
+        item.textContent = text;
+        list.appendChild(item);
+      });
+
+      const note = document.createElement("p");
+      note.textContent = "Semantic scores use the Datamuse word API, so some weird guesses may miss even when they feel related.";
+      modalBody.append(list, note);
+      setModalActions([{ label: "Got It", primary: true, onClick: closeModal }]);
+    }
+
+    function showHintConfirm(hint) {
+      pendingHint = hint;
+      openModal("Use a Hint?");
+      const text = document.createElement("p");
+      text.textContent = "Are you sure you want to use a hint?";
+      modalBody.appendChild(text);
+      setModalActions([
+        { label: "Use", primary: true, onClick: confirmHint },
+        { label: "Cancel", onClick: () => {
+          pendingHint = null;
+          closeModal();
+          focusGuessInput();
+        } }
+      ]);
+    }
+
+    function confirmHint() {
+      const hint = pendingHint;
+      pendingHint = null;
+      closeModal();
+      if (hint) addHintRow(hint);
+    }
+
+    function showRevealHintWarning() {
+      openModal("Reveal Answer?");
+      const text = document.createElement("p");
+      text.textContent = "The best hint left is the hidden word. Revealing it will end this puzzle.";
+      modalBody.appendChild(text);
+      setModalActions([
+        { label: "Reveal", primary: true, onClick: revealAnswerHint },
+        { label: "Cancel", onClick: () => {
+          closeModal();
+          focusGuessInput();
+        } }
+      ]);
+    }
+
+    function revealAnswerHint() {
+      closeModal();
+      rows.unshift({ word: answer, rank: 1, kind: "hint", at: Date.now() });
+      solved = true;
+      playGuessTone(true);
+      setEnabled(false);
+      setMessage(`Hint revealed ${answer.toUpperCase()}.`);
+      saveState();
+      render();
+      showSolvedModal();
+    }
+
+    function showSolvedModal() {
+      openModal("Solved");
+      const text = document.createElement("p");
+      const guessCount = getGuessCount();
+      const revealedByHint = rows.some((row) => row.kind === "hint" && row.word === answer);
+      text.textContent = revealedByHint
+        ? `A hint revealed ${answer.toUpperCase()} after ${guessCount} guesses.`
+        : `The word was ${answer.toUpperCase()}. You solved it in ${guessCount} guesses.`;
+      modalBody.appendChild(text);
+      setModalActions([
+        { label: "New Puzzle", primary: true, onClick: startNewPuzzle },
+        { label: "Close", onClick: closeModal }
+      ]);
+    }
+
+    function startNewPuzzle() {
+      const url = new URL(window.location.href);
+      const wordCount = answerWords.length;
+      const nextOffset = wordCount > 1 ? Math.floor(Math.random() * (wordCount - 1)) + 1 : 1;
+      url.searchParams.set("day", String(puzzleId + nextOffset));
+      url.hash = "";
+      window.location.href = url.toString();
+    }
+
+    function openModal(title) {
+      modalTitle.textContent = title;
+      modalBody.innerHTML = "";
+      modalActions.innerHTML = "";
+      modalBackdrop.classList.add("show");
+    }
+
+    function closeModal() {
+      modalBackdrop.classList.remove("show");
+    }
+
+    function setModalActions(actions) {
+      modalActions.innerHTML = "";
+
+      actions.forEach((action) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = action.label;
+        button.className = action.primary ? "primary-action" : "text-button";
+        button.addEventListener("click", action.onClick);
+        modalActions.appendChild(button);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -346,7 +346,7 @@
     .home-grid {
       width: 100%;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
       gap: 12px;
     }
 
@@ -431,6 +431,44 @@
 
     .casual .word-block.present {
       background: var(--correct);
+    }
+
+    .clue-art {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .clue-line {
+      width: min(154px, 100%);
+      height: 12px;
+      border-radius: 999px;
+      background: #101112;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .clue-line::before {
+      content: "";
+      display: block;
+      width: var(--fill);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--bar);
+    }
+
+    .clue-line.hot {
+      --fill: 78%;
+      --bar: var(--correct);
+    }
+
+    .clue-line.warm {
+      --fill: 48%;
+      --bar: var(--present);
+    }
+
+    .clue-line.miss {
+      --fill: 16%;
+      --bar: #e23a3a;
     }
 
     .site-credit {
@@ -568,10 +606,10 @@
     }
 
     button.key {
-      height: 43px;
-      width: 42px;
+      height: 48px;
+      width: 46px;
       min-width: 0;
-      flex: 0 0 42px;
+      flex: 0 0 46px;
       border: 0;
       border-radius: 8px;
       background: var(--key);
@@ -588,14 +626,14 @@
     }
 
     button.key.wide {
-      width: 58px;
-      flex-basis: 58px;
+      width: 64px;
+      flex-basis: 64px;
       font-size: 12px;
     }
 
     button.key.space {
-      width: 214px;
-      flex-basis: 214px;
+      width: 236px;
+      flex-basis: 236px;
       font-size: 12px;
       text-transform: none;
     }
@@ -975,21 +1013,21 @@
       }
 
       button.key {
-        height: 40px;
-        width: 29px;
-        flex-basis: 29px;
+        height: 44px;
+        width: 31px;
+        flex-basis: 31px;
         font-size: 17px;
       }
 
       button.key.wide {
-        width: 46px;
-        flex-basis: 46px;
+        width: 50px;
+        flex-basis: 50px;
         font-size: 10px;
       }
 
       button.key.space {
-        width: 188px;
-        flex-basis: 188px;
+        width: 200px;
+        flex-basis: 200px;
         font-size: 10px;
       }
     }
@@ -1008,25 +1046,25 @@
       }
 
       button.key {
-        height: 38px;
+        height: 42px;
       }
     }
 
     @media (max-width: 360px) {
       button.key {
-        width: 27px;
-        flex-basis: 27px;
+        width: 29px;
+        flex-basis: 29px;
         font-size: 16px;
       }
 
       button.key.wide {
-        width: 42px;
-        flex-basis: 42px;
+        width: 46px;
+        flex-basis: 46px;
       }
 
       button.key.space {
-        width: 172px;
-        flex-basis: 172px;
+        width: 184px;
+        flex-basis: 184px;
       }
     }
 
@@ -1035,11 +1073,11 @@
         min-height: calc(100dvh - 104px - 30px);
         justify-content: space-between;
         gap: clamp(8px, 1.4dvh, 14px);
-        padding: clamp(6px, 1.4dvh, 12px) 8px max(6px, env(safe-area-inset-bottom));
+        padding: clamp(6px, 1.4dvh, 12px) 4px max(6px, env(safe-area-inset-bottom));
       }
 
       body:not(.home) #board {
-        width: min(315px, 92vw, 40dvh);
+        width: min(315px, 92vw, 36dvh);
         gap: clamp(7px, 1.1dvh, 10px);
       }
 
@@ -1057,23 +1095,23 @@
       }
 
       body:not(.home) .key-row {
-        gap: clamp(3px, 1vw, 4px);
+        gap: clamp(2px, 0.8vw, 4px);
       }
 
       body:not(.home) button.key {
-        width: clamp(27px, 7.4vw, 29px);
-        height: clamp(34px, 4.9dvh, 40px);
-        flex-basis: clamp(27px, 7.4vw, 29px);
+        width: clamp(29px, 8.2vw, 32px);
+        height: clamp(40px, 5.6dvh, 48px);
+        flex-basis: clamp(29px, 8.2vw, 32px);
       }
 
       body:not(.home) button.key.wide {
-        width: clamp(42px, 11.8vw, 46px);
-        flex-basis: clamp(42px, 11.8vw, 46px);
+        width: clamp(46px, 13vw, 52px);
+        flex-basis: clamp(46px, 13vw, 52px);
       }
 
       body:not(.home) button.key.space {
-        width: clamp(172px, 47vw, 188px);
-        flex-basis: clamp(172px, 47vw, 188px);
+        width: clamp(196px, 51vw, 206px);
+        flex-basis: clamp(196px, 51vw, 206px);
       }
 
       body:not(.home) .site-credit {
@@ -1089,6 +1127,7 @@
     <nav class="mode-links" aria-label="WORDLORD modes">
       <button id="sideDailyButton" class="side-link" type="button">Daily</button>
       <button id="sideCasualButton" class="side-link" type="button">Casual</button>
+      <button id="sideCluelessButton" class="side-link" type="button">Clueless</button>
     </nav>
     <button id="themeButton" class="theme-toggle" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
   </aside>
@@ -1147,6 +1186,15 @@
           <span class="word-block absent"></span>
           <span class="word-block present"></span>
           <span class="word-block absent"></span>
+        </span>
+      </button>
+
+      <button id="cluelessModeButton" class="home-panel clueless" type="button" aria-label="Play Clueless">
+        <span class="home-title">Clueless</span>
+        <span class="card-art clue-art" aria-hidden="true">
+          <span class="clue-line hot"></span>
+          <span class="clue-line warm"></span>
+          <span class="clue-line miss"></span>
         </span>
       </button>
 
@@ -1281,8 +1329,10 @@
     const homeButton = document.getElementById("homeButton");
     const dailyModeButton = document.getElementById("dailyModeButton");
     const casualModeButton = document.getElementById("casualModeButton");
+    const cluelessModeButton = document.getElementById("cluelessModeButton");
     const sideDailyButton = document.getElementById("sideDailyButton");
     const sideCasualButton = document.getElementById("sideCasualButton");
+    const sideCluelessButton = document.getElementById("sideCluelessButton");
     const sidebarBackdrop = document.getElementById("sidebarBackdrop");
     const boardEl = document.getElementById("board");
     const keyboardEl = document.getElementById("keyboard");
@@ -1349,6 +1399,7 @@
       backButton.addEventListener("click", goHome);
       dailyModeButton.addEventListener("click", startDailyPuzzle);
       casualModeButton.addEventListener("click", startCasualPuzzle);
+      cluelessModeButton.addEventListener("click", openCluelessGame);
       sideDailyButton.addEventListener("click", () => {
         closeSidebar();
         startDailyPuzzle();
@@ -1356,6 +1407,10 @@
       sideCasualButton.addEventListener("click", () => {
         closeSidebar();
         startCasualPuzzle();
+      });
+      sideCluelessButton.addEventListener("click", () => {
+        closeSidebar();
+        openCluelessGame();
       });
       themeButton.addEventListener("click", toggleTheme);
       customButton.addEventListener("click", showCustomModal);
@@ -1412,6 +1467,7 @@
     function updateModeNav(activeMode) {
       sideDailyButton.classList.toggle("active", activeMode === "daily");
       sideCasualButton.classList.toggle("active", activeMode === "casual");
+      sideCluelessButton.classList.remove("active");
     }
 
     function toggleSidebar() {
@@ -1429,6 +1485,13 @@
 
     function goHome() {
       window.location.href = buildHomeUrl();
+    }
+
+    function openCluelessGame() {
+      const url = new URL("clueless.html", window.location.href);
+      url.search = "";
+      url.hash = "";
+      window.location.href = url.toString();
     }
 
     async function loadRemoteCustomPuzzle(id) {
