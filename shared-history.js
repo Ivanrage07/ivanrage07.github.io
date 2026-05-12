@@ -7,6 +7,7 @@
   const playerSessionKey = "wordle-clone:player-session";
   const playerPkceKey = "wordle-clone:player-pkce-verifier";
   const playerReturnUrlKey = "wordle-clone:player-return-url";
+  const playerProfileKey = "wordle-clone:player-profile";
 
   function hasRealValue(value) {
     return typeof value === "string" && value.trim() && !value.includes("YOUR_");
@@ -100,7 +101,7 @@
 
     const session = await getValidPlayerSession();
     if (session) {
-      upsertPlayerProfile(session).catch((error) => {
+      syncPlayerProfile(session).catch((error) => {
         console.warn("Unable to save player profile.", error);
       });
     }
@@ -335,12 +336,18 @@
     localStorage.removeItem(playerSessionKey);
     localStorage.removeItem(playerPkceKey);
     localStorage.removeItem(playerReturnUrlKey);
+    localStorage.removeItem(playerProfileKey);
   }
 
-  function getPlayerDisplayName(session) {
+  function getGoogleDisplayName(session) {
     const user = session && session.user;
     const metadata = (user && user.user_metadata) || {};
     return metadata.full_name || metadata.name || metadata.preferred_username || (user && user.email) || "Player";
+  }
+
+  function getPlayerDisplayName(session) {
+    const profile = getStoredPlayerProfile(session);
+    return (profile && (profile.username || profile.display_name)) || getGoogleDisplayName(session);
   }
 
   function getPlayerAvatarUrl(session) {
@@ -361,25 +368,145 @@
     };
   }
 
-  async function upsertPlayerProfile(session) {
+  async function syncPlayerProfile(session) {
     const user = session && session.user;
     if (!user || !user.id) return;
 
-    await request("wordle_profiles", {
+    const existingProfile = await fetchPlayerProfile(session);
+    const now = new Date().toISOString();
+
+    if (existingProfile) {
+      const rows = await request(`wordle_profiles?user_id=eq.${encodeURIComponent(user.id)}`, {
+        method: "PATCH",
+        authToken: session.access_token,
+        headers: {
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({
+          email: user.email || null,
+          avatar_url: getPlayerAvatarUrl(session) || null,
+          last_seen: now
+        })
+      });
+      const profile = rows && rows[0] ? rows[0] : existingProfile;
+      setPlayerProfile(profile, session);
+      return profile;
+    }
+
+    const rows = await request("wordle_profiles", {
       method: "POST",
       authToken: session.access_token,
       headers: {
         "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=minimal"
+        Prefer: "return=representation"
       },
       body: JSON.stringify({
         user_id: user.id,
         email: user.email || null,
-        display_name: getPlayerDisplayName(session),
+        display_name: getGoogleDisplayName(session),
+        username: null,
         avatar_url: getPlayerAvatarUrl(session) || null,
+        last_seen: now
+      })
+    });
+
+    if (rows && rows[0]) {
+      setPlayerProfile(rows[0], session);
+      return rows[0];
+    }
+  }
+
+  async function fetchPlayerProfile(session) {
+    const user = session && session.user;
+    if (!user || !user.id) return null;
+
+    const rows = await request(
+      `wordle_profiles?user_id=eq.${encodeURIComponent(user.id)}&select=user_id,email,display_name,username,avatar_url,last_seen&limit=1`,
+      { authToken: session.access_token }
+    );
+
+    const profile = rows && rows[0] ? rows[0] : null;
+    if (profile) {
+      setPlayerProfile(profile, session);
+    }
+    return profile;
+  }
+
+  async function updatePlayerUsername(username) {
+    const session = await getValidPlayerSession();
+    const user = session && session.user;
+    if (!user || !user.id) {
+      throw new Error("Please sign in first.");
+    }
+
+    const cleanName = cleanUsername(username);
+    if (cleanName.length < 2) {
+      throw new Error("Use at least 2 characters.");
+    }
+
+    await syncPlayerProfile(session);
+    const rows = await request(`wordle_profiles?user_id=eq.${encodeURIComponent(user.id)}`, {
+      method: "PATCH",
+      authToken: session.access_token,
+      headers: {
+        "Content-Type": "application/json",
+        Prefer: "return=representation"
+      },
+      body: JSON.stringify({
+        username: cleanName,
+        display_name: cleanName,
         last_seen: new Date().toISOString()
       })
     });
+
+    const profile = rows && rows[0] ? rows[0] : { user_id: user.id, username: cleanName, display_name: cleanName };
+    setPlayerProfile(profile, session);
+    return profile;
+  }
+
+  function cleanUsername(value) {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/[<>]/g, "")
+      .slice(0, 24);
+  }
+
+  function setPlayerProfile(profile, session) {
+    if (!profile) return;
+    const user = session && session.user;
+    localStorage.setItem(playerProfileKey, JSON.stringify({
+      ...profile,
+      user_id: profile.user_id || (user && user.id) || null
+    }));
+  }
+
+  function getStoredPlayerProfile(session) {
+    try {
+      const profile = JSON.parse(localStorage.getItem(playerProfileKey));
+      const user = session && session.user;
+      if (!profile || !profile.user_id || !user || profile.user_id !== user.id) {
+        return null;
+      }
+      return profile;
+    } catch (error) {
+      localStorage.removeItem(playerProfileKey);
+      return null;
+    }
+  }
+
+  async function fetchPublicLeaderboard(limit = 10) {
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 10, 100));
+    const rows = await request("rpc/get_wordle_leaderboard", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ limit_count: safeLimit })
+    });
+
+    return Array.isArray(rows) ? rows : [];
   }
 
   async function fetchAttempts(limit = 1000) {
@@ -470,12 +597,14 @@
     getCustomPuzzle,
     logAttempt,
     fetchAttempts,
+    fetchPublicLeaderboard,
     initPlayerAuth,
     startGoogleSignIn,
     signOutPlayer,
     getValidPlayerSession,
     getPlayerDisplayName,
     getPlayerAvatarUrl,
+    updatePlayerUsername,
     signInAdmin,
     signOutAdmin,
     getValidAdminSession
