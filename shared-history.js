@@ -506,7 +506,30 @@
       body: JSON.stringify({ limit_count: safeLimit })
     });
 
-    return Array.isArray(rows) ? rows : [];
+    if (!Array.isArray(rows)) return [];
+
+    const sorted = [...rows].sort((a, b) => {
+      const winsDiff = Number(b.wins || 0) - Number(a.wins || 0);
+      if (winsDiff) return winsDiff;
+
+      const playsDiff = Number(b.plays || 0) - Number(a.plays || 0);
+      if (playsDiff) return playsDiff;
+
+      const timeDiff = (Date.parse(b.last_played || "") || 0) - (Date.parse(a.last_played || "") || 0);
+      if (timeDiff) return timeDiff;
+
+      return String(a.username || "").localeCompare(String(b.username || ""));
+    });
+
+    let lastWins = null;
+    let lastRank = 0;
+    return sorted.map((row, index) => {
+      const wins = Number(row.wins || 0);
+      const rank = wins === lastWins ? lastRank : index + 1;
+      lastWins = wins;
+      lastRank = rank;
+      return { ...row, rank };
+    });
   }
 
   async function fetchAttempts(limit = 1000) {

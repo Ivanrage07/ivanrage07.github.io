@@ -559,12 +559,8 @@
         <table>
           <thead>
             <tr>
-              <th>#</th>
+              <th>Rank</th>
               <th>Player</th>
-              <th>Plays</th>
-              <th>Wins</th>
-              <th>Win %</th>
-              <th>Avg Tries</th>
             </tr>
           </thead>
           <tbody id="publicLeaderboardBody"></tbody>
@@ -577,7 +573,7 @@
   <footer class="site-credit">made by lordGami</footer>
 
   <script src="supabase-config.js?v=20260512-2"></script>
-  <script src="shared-history.js?v=20260512-2"></script>
+  <script src="shared-history.js?v=20260512-3"></script>
   <script>
     "use strict";
 
@@ -809,11 +805,11 @@
 
     async function loadPublicLeaderboard() {
       publicLeaderboardStatus.textContent = "Loading leaderboard...";
-      publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Loading...</td></tr>`;
+      publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="2">Loading...</td></tr>`;
 
       if (!window.WordleBackend || !window.WordleBackend.isEnabled() || typeof window.WordleBackend.fetchPublicLeaderboard !== "function") {
         publicLeaderboardStatus.textContent = "Leaderboard is not ready yet.";
-        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">No leaderboard yet.</td></tr>`;
+        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="2">No leaderboard yet.</td></tr>`;
         return;
       }
 
@@ -826,7 +822,7 @@
       } catch (error) {
         console.warn("Unable to load public leaderboard.", error);
         publicLeaderboardStatus.textContent = "Leaderboard is not ready yet.";
-        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Try again in a bit.</td></tr>`;
+        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="2">Try again in a bit.</td></tr>`;
       }
     }
 
@@ -834,7 +830,7 @@
       publicLeaderboardBody.innerHTML = "";
 
       if (!rows.length) {
-        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Sign in and play to join the leaderboard.</td></tr>`;
+        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="2">Sign in and play to join the leaderboard.</td></tr>`;
         return;
       }
 
@@ -843,10 +839,6 @@
         tableRow.innerHTML = `
           <td>${row.rank || index + 1}</td>
           <td>${escapeHtml(row.username || "Player")}</td>
-          <td>${Number(row.plays) || 0}</td>
-          <td>${Number(row.wins) || 0}</td>
-          <td>${Number(row.win_percent) || 0}%</td>
-          <td>${row.avg_tries === null || row.avg_tries === undefined ? "-" : Number(row.avg_tries).toFixed(1)}</td>
         `;
         publicLeaderboardBody.appendChild(tableRow);
       });
