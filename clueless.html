@@ -119,6 +119,11 @@
       gap: 8px;
     }
 
+    .account-link {
+      margin-top: auto;
+      margin-bottom: 58px;
+    }
+
     .side-link {
       background: transparent;
       padding: 0 10px;
@@ -423,6 +428,55 @@
       font-size: 13px;
       font-weight: 700;
       opacity: 0.75;
+    }
+
+    .account-prompt {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      width: min(430px, calc(100vw - 24px));
+      transform: translateX(-50%);
+      z-index: 25;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.42);
+    }
+
+    .account-prompt[hidden] {
+      display: none;
+    }
+
+    .account-prompt p {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .prompt-action,
+    .prompt-close {
+      min-height: 38px;
+      border: 0;
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .prompt-action {
+      background: var(--correct);
+      padding: 0 12px;
+    }
+
+    .prompt-close {
+      width: 38px;
+      background: var(--surface-2);
     }
 
     .guess-list {
@@ -735,6 +789,7 @@
       <button id="sideCasualButton" class="side-link" type="button">Casual</button>
       <button id="sideCluelessButton" class="side-link active" type="button">Cluelord</button>
     </nav>
+    <button id="accountButton" class="side-link account-link" type="button">Sign in</button>
     <button id="themeButton" class="theme-toggle" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
   </aside>
   <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
@@ -756,6 +811,12 @@
       </div>
     </div>
   </header>
+
+  <div id="accountPrompt" class="account-prompt" role="status" hidden>
+    <p>Sign in with Google to save your plays.</p>
+    <button id="promptSignInButton" class="prompt-action" type="button">Sign in</button>
+    <button id="promptCloseButton" class="prompt-close" type="button" aria-label="Dismiss account prompt">X</button>
+  </div>
 
   <main>
     <section class="status-grid" aria-label="Game status">
@@ -815,6 +876,8 @@
     </div>
   </div>
 
+  <script src="supabase-config.js"></script>
+  <script src="shared-history.js"></script>
   <script>
     "use strict";
 
@@ -831,6 +894,7 @@
     const NORMAL_HINT_RATIO = 0.7;
     const DOUBLE_DIGIT_HINT_RATIO = 0.86;
     const themeKey = "wordle-clone:theme";
+    const accountPromptKey = "wordle-clone:account-prompt-dismissed";
     const helpSeenKey = "clueless-help-seen";
     const stateKey = `clueless:${getPuzzleId()}`;
     const answerWords = [
@@ -860,6 +924,10 @@
     const sideCluelessButton = document.getElementById("sideCluelessButton");
     const sidebarBackdrop = document.getElementById("sidebarBackdrop");
     const menuButton = document.getElementById("menuButton");
+    const accountButton = document.getElementById("accountButton");
+    const accountPrompt = document.getElementById("accountPrompt");
+    const promptSignInButton = document.getElementById("promptSignInButton");
+    const promptCloseButton = document.getElementById("promptCloseButton");
     const themeButton = document.getElementById("themeButton");
     const helpButton = document.getElementById("helpButton");
     const guessForm = document.getElementById("guessForm");
@@ -880,6 +948,7 @@
 
     initTheme();
     wireControls();
+    initAccountSystem();
     render();
     loadRelatedWords();
 
@@ -896,6 +965,9 @@
         closeSidebar();
         focusGuessInput();
       });
+      accountButton.addEventListener("click", showAccountModal);
+      promptSignInButton.addEventListener("click", startGoogleSignIn);
+      promptCloseButton.addEventListener("click", dismissAccountPrompt);
       themeButton.addEventListener("click", () => {
         toggleTheme();
         focusGuessInput();
@@ -964,6 +1036,102 @@
 
       url.hash = "";
       window.location.href = url.toString();
+    }
+
+    async function initAccountSystem() {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        accountButton.hidden = true;
+        accountPrompt.hidden = true;
+        return;
+      }
+
+      const hadAuthCallback = window.location.hash.includes("access_token")
+        || new URLSearchParams(window.location.search).has("code");
+
+      try {
+        const session = await window.WordleBackend.initPlayerAuth();
+        updateAccountUi(session);
+
+        if (session && hadAuthCallback) {
+          setMessage("Signed in.");
+        }
+
+        if (!session && !localStorage.getItem(accountPromptKey)) {
+          setTimeout(() => {
+            if (!localStorage.getItem(accountPromptKey)) {
+              accountPrompt.hidden = false;
+            }
+          }, 1200);
+        }
+      } catch (error) {
+        console.warn("Account sign-in failed.", error);
+        updateAccountUi(null);
+        setMessage("Sign in failed.");
+      }
+    }
+
+    function updateAccountUi(session) {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) return;
+      accountPrompt.hidden = true;
+      accountButton.textContent = session
+        ? `Account: ${window.WordleBackend.getPlayerDisplayName(session).split("@")[0]}`
+        : "Sign in";
+    }
+
+    async function showAccountModal() {
+      closeSidebar();
+      openModal("Account");
+
+      const session = window.WordleBackend && window.WordleBackend.isEnabled()
+        ? await window.WordleBackend.getValidPlayerSession()
+        : null;
+
+      const text = document.createElement("p");
+      text.textContent = session
+        ? `Signed in as ${window.WordleBackend.getPlayerDisplayName(session)}. Your plays save to Supabase.`
+        : "Sign in with Google to save your plays to Supabase.";
+      modalBody.appendChild(text);
+
+      setModalActions([
+        session
+          ? { label: "Sign Out", primary: true, onClick: signOutAccount }
+          : { label: "Google Sign In", primary: true, onClick: startGoogleSignIn },
+        { label: "Close", onClick: closeModal }
+      ]);
+    }
+
+    async function startGoogleSignIn() {
+      dismissAccountPrompt();
+
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        setMessage("Supabase not ready.");
+        focusGuessInput();
+        return;
+      }
+
+      try {
+        await window.WordleBackend.startGoogleSignIn();
+      } catch (error) {
+        console.warn("Google sign-in failed.", error);
+        setMessage("Sign in failed.");
+        focusGuessInput();
+      }
+    }
+
+    async function signOutAccount() {
+      if (window.WordleBackend && window.WordleBackend.isEnabled()) {
+        await window.WordleBackend.signOutPlayer();
+      }
+
+      updateAccountUi(null);
+      closeModal();
+      setMessage("Signed out.");
+    }
+
+    function dismissAccountPrompt() {
+      accountPrompt.hidden = true;
+      localStorage.setItem(accountPromptKey, "1");
+      focusGuessInput();
     }
 
     async function loadRelatedWords() {
