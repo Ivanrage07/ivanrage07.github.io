@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wordle Admin History</title>
+  <title>WORDLORD Leaderboard</title>
   <style>
     :root {
       --bg: #121213;
@@ -132,11 +132,41 @@
       margin: 0 0 16px;
     }
 
+    .panel-heading,
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-heading {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-heading h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .toolbar {
+      justify-content: flex-end;
+    }
+
+    .toolbar select {
+      width: auto;
+      min-width: 120px;
+      height: 40px;
+      padding: 0 34px 0 10px;
+    }
+
     .filters {
       display: grid;
-      grid-template-columns: 160px 170px 1fr;
+      grid-template-columns: repeat(3, minmax(150px, 1fr));
       gap: 10px;
-      margin-bottom: 16px;
+      padding: 16px;
     }
 
     select,
@@ -187,11 +217,38 @@
       margin-top: 16px;
     }
 
-    .panel h2 {
+    .panel > .status {
+      padding: 12px 16px 0;
+    }
+
+    .panel h2,
+    details.panel > summary {
       margin: 0;
       padding: 14px 16px;
       border-bottom: 1px solid var(--border);
       font-size: 18px;
+    }
+
+    details.panel > summary {
+      cursor: pointer;
+      font-weight: 900;
+      list-style: none;
+    }
+
+    details.panel > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.panel > summary::after {
+      content: "Open";
+      float: right;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    details.panel[open] > summary::after {
+      content: "Close";
     }
 
     .table-wrap {
@@ -306,6 +363,11 @@
         grid-template-columns: 1fr;
       }
 
+      .panel-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
       h1 {
         font-size: 26px;
       }
@@ -315,7 +377,7 @@
 <body>
   <header>
     <div class="header-inner">
-      <h1>History</h1>
+      <h1>Leaderboard</h1>
       <div class="header-actions">
         <a class="button" href="index.html">Game</a>
         <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
@@ -326,35 +388,84 @@
   </header>
 
   <main>
-    <section id="authPanel" class="auth-panel" hidden>
-      <h2>Admin Login</h2>
-      <p>Sign in with your admin account.</p>
-      <form id="authForm" class="auth-form">
-        <input id="emailInput" type="email" autocomplete="email" placeholder="Email" required />
-        <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" required />
-        <button id="loginButton" class="primary" type="submit">Sign In</button>
-        <p id="authError" class="auth-error" role="alert"></p>
-      </form>
+    <section id="publicLeaderboard" class="panel">
+      <div class="panel-heading">
+        <h2>Leaderboard</h2>
+        <div class="toolbar">
+          <select id="publicLimitFilter" aria-label="Leaderboard size">
+            <option value="10">Top 10</option>
+            <option value="25">Top 25</option>
+            <option value="50">Top 50</option>
+          </select>
+          <button id="publicRefreshButton" type="button">Refresh</button>
+        </div>
+      </div>
+      <p id="publicLeaderboardStatus" class="status">Loading leaderboard...</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th>Plays</th>
+              <th>Wins</th>
+              <th>Win %</th>
+              <th>Avg Tries</th>
+            </tr>
+          </thead>
+          <tbody id="publicLeaderboardBody"></tbody>
+        </table>
+      </div>
     </section>
 
-    <section id="dashboard" hidden>
+    <details class="panel">
+      <summary>Admin Tools</summary>
+      <section id="authPanel" class="auth-panel" hidden>
+        <h2>Admin Login</h2>
+        <p>Sign in with your admin account.</p>
+        <form id="authForm" class="auth-form">
+          <input id="emailInput" type="email" autocomplete="email" placeholder="Email" required />
+          <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" required />
+          <button id="loginButton" class="primary" type="submit">Sign In</button>
+          <p id="authError" class="auth-error" role="alert"></p>
+        </form>
+      </section>
+
+      <section id="dashboard" hidden>
       <p id="status" class="status">Loading history...</p>
 
-      <div class="filters">
-        <select id="typeFilter" aria-label="Game type">
-          <option value="all">All games</option>
-          <option value="daily">Daily only</option>
-          <option value="casual">Casual only</option>
-          <option value="custom">Custom only</option>
-        </select>
-        <input id="dateFilter" type="date" aria-label="Date" />
-        <input id="searchFilter" type="search" placeholder="Search puzzle or answer" aria-label="Search" />
-      </div>
+      <details class="panel" open>
+        <summary>Filters</summary>
+        <div class="filters">
+          <select id="typeFilter" aria-label="Game type">
+            <option value="all">All games</option>
+            <option value="daily">Daily only</option>
+            <option value="casual">Casual only</option>
+            <option value="custom">Custom only</option>
+          </select>
+          <select id="resultFilter" aria-label="Result">
+            <option value="all">All results</option>
+            <option value="won">Wins only</option>
+            <option value="lost">Losses only</option>
+          </select>
+          <select id="playerFilter" aria-label="Player">
+            <option value="all">All players</option>
+          </select>
+          <select id="sortFilter" aria-label="Sort">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="tries">Fewest tries</option>
+            <option value="player">Player name</option>
+          </select>
+          <input id="dateFilter" type="date" aria-label="Date" />
+          <input id="searchFilter" type="search" placeholder="Search puzzle, answer, or player" aria-label="Search" />
+        </div>
+      </details>
 
       <section id="statsGrid" class="stats-grid" aria-label="Summary stats"></section>
 
-      <section class="panel">
-        <h2>Leaderboard</h2>
+      <details class="panel" open>
+        <summary>Admin Leaderboard</summary>
         <div class="table-wrap">
           <table>
             <thead>
@@ -371,10 +482,10 @@
           </table>
         </div>
         <button id="leaderboardMoreButton" class="leaderboard-more" type="button" hidden>See More</button>
-      </section>
+      </details>
 
-      <section class="panel">
-        <h2>By Puzzle</h2>
+      <details class="panel">
+        <summary>By Puzzle</summary>
         <div class="table-wrap">
           <table>
             <thead>
@@ -391,10 +502,10 @@
             <tbody id="puzzleBody"></tbody>
           </table>
         </div>
-      </section>
+      </details>
 
-      <section class="panel">
-        <h2>Play History</h2>
+      <details class="panel" open>
+        <summary>Play History</summary>
         <div class="table-wrap">
           <table>
             <thead>
@@ -411,8 +522,9 @@
             <tbody id="historyBody"></tbody>
           </table>
         </div>
+      </details>
       </section>
-    </section>
+    </details>
   </main>
 
   <footer class="site-credit">made by lordGami</footer>
@@ -448,6 +560,10 @@
     const passwordInput = document.getElementById("passwordInput");
     const loginButton = document.getElementById("loginButton");
     const authError = document.getElementById("authError");
+    const publicLeaderboardStatus = document.getElementById("publicLeaderboardStatus");
+    const publicLeaderboardBody = document.getElementById("publicLeaderboardBody");
+    const publicLimitFilter = document.getElementById("publicLimitFilter");
+    const publicRefreshButton = document.getElementById("publicRefreshButton");
     const statsGrid = document.getElementById("statsGrid");
     const leaderboardBody = document.getElementById("leaderboardBody");
     const leaderboardMoreButton = document.getElementById("leaderboardMoreButton");
@@ -457,6 +573,9 @@
     const refreshButton = document.getElementById("refreshButton");
     const signOutButton = document.getElementById("signOutButton");
     const typeFilter = document.getElementById("typeFilter");
+    const resultFilter = document.getElementById("resultFilter");
+    const playerFilter = document.getElementById("playerFilter");
+    const sortFilter = document.getElementById("sortFilter");
     const dateFilter = document.getElementById("dateFilter");
     const searchFilter = document.getElementById("searchFilter");
 
@@ -464,9 +583,12 @@
     let leaderboardExpanded = false;
 
     initTheme();
+    loadPublicLeaderboard();
     initAuth();
     authForm.addEventListener("submit", signIn);
     themeButton.addEventListener("click", toggleTheme);
+    publicLimitFilter.addEventListener("change", loadPublicLeaderboard);
+    publicRefreshButton.addEventListener("click", loadPublicLeaderboard);
     refreshButton.addEventListener("click", loadHistory);
     signOutButton.addEventListener("click", signOut);
     leaderboardMoreButton.addEventListener("click", () => {
@@ -474,6 +596,9 @@
       render();
     });
     typeFilter.addEventListener("change", render);
+    resultFilter.addEventListener("change", render);
+    playerFilter.addEventListener("change", render);
+    sortFilter.addEventListener("change", render);
     dateFilter.addEventListener("change", render);
     searchFilter.addEventListener("input", render);
 
@@ -494,6 +619,51 @@
       const nextTheme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
       localStorage.setItem(themeKey, nextTheme);
       setTheme(nextTheme);
+    }
+
+    async function loadPublicLeaderboard() {
+      publicLeaderboardStatus.textContent = "Loading leaderboard...";
+      publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Loading...</td></tr>`;
+
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        publicLeaderboardStatus.textContent = "Leaderboard is not configured yet.";
+        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">No leaderboard yet.</td></tr>`;
+        return;
+      }
+
+      try {
+        const rows = await window.WordleBackend.fetchPublicLeaderboard(Number(publicLimitFilter.value));
+        renderPublicLeaderboard(rows);
+        publicLeaderboardStatus.textContent = rows.length
+          ? "Signed-in players only."
+          : "No signed-in plays yet.";
+      } catch (error) {
+        console.warn("Unable to load public leaderboard.", error);
+        publicLeaderboardStatus.textContent = "Leaderboard needs the latest database update.";
+        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Run the updated schema, then refresh.</td></tr>`;
+      }
+    }
+
+    function renderPublicLeaderboard(rows) {
+      publicLeaderboardBody.innerHTML = "";
+
+      if (!rows.length) {
+        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Sign in and play to join the leaderboard.</td></tr>`;
+        return;
+      }
+
+      rows.forEach((row, index) => {
+        const tableRow = document.createElement("tr");
+        tableRow.innerHTML = `
+          <td>${row.rank || index + 1}</td>
+          <td>${escapeHtml(row.username || "Player")}</td>
+          <td>${Number(row.plays) || 0}</td>
+          <td>${Number(row.wins) || 0}</td>
+          <td>${Number(row.win_percent) || 0}%</td>
+          <td>${row.avg_tries === null || row.avg_tries === undefined ? "-" : Number(row.avg_tries).toFixed(1)}</td>
+        `;
+        publicLeaderboardBody.appendChild(tableRow);
+      });
     }
 
     async function initAuth() {
@@ -575,6 +745,7 @@
       }
 
       attempts = mergeAttempts(remoteAttempts, []).map(normalizeAttempt);
+      populatePlayerFilter();
       render();
     }
 
@@ -632,11 +803,16 @@
 
     function getFilteredAttempts() {
       const type = typeFilter.value;
+      const result = resultFilter.value;
+      const player = playerFilter.value;
       const date = dateFilter.value;
       const search = searchFilter.value.trim().toLowerCase();
 
       return attempts.filter((attempt) => {
         if (type !== "all" && attempt.puzzle_kind !== type) return false;
+        if (result === "won" && !attempt.won) return false;
+        if (result === "lost" && attempt.won) return false;
+        if (player !== "all" && getPlayerIdentity(attempt) !== player) return false;
         if (date && toDateInputValue(attempt.created_at) !== date) return false;
         if (search) {
           const haystack = `${attempt.puzzle_label} ${attempt.answer} ${attempt.puzzle_key} ${attempt.player_label}`.toLowerCase();
@@ -647,11 +823,52 @@
     }
 
     function render() {
-      const filtered = getFilteredAttempts().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const filtered = sortAttempts(getFilteredAttempts());
       renderStats(filtered);
       renderLeaderboard(filtered);
       renderPuzzleTable(filtered);
       renderHistoryTable(filtered);
+    }
+
+    function sortAttempts(rows) {
+      const sorted = [...rows];
+      if (sortFilter.value === "oldest") {
+        return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      }
+      if (sortFilter.value === "tries") {
+        return sorted.sort((a, b) => {
+          const aTries = a.won ? a.guesses_used : 99;
+          const bTries = b.won ? b.guesses_used : 99;
+          return aTries - bTries || new Date(b.created_at) - new Date(a.created_at);
+        });
+      }
+      if (sortFilter.value === "player") {
+        return sorted.sort((a, b) => a.player_label.localeCompare(b.player_label) || new Date(b.created_at) - new Date(a.created_at));
+      }
+      return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    function populatePlayerFilter() {
+      const current = playerFilter.value;
+      const players = new Map();
+
+      attempts.forEach((attempt) => {
+        players.set(getPlayerIdentity(attempt), attempt.player_label);
+      });
+
+      playerFilter.innerHTML = `<option value="all">All players</option>`;
+      [...players.entries()]
+        .sort((a, b) => a[1].localeCompare(b[1]))
+        .forEach(([value, label]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          playerFilter.appendChild(option);
+        });
+
+      if ([...playerFilter.options].some((option) => option.value === current)) {
+        playerFilter.value = current;
+      }
     }
 
     function renderStats(rows) {
