@@ -794,7 +794,7 @@
           </svg>
         </button>
       </form>
-      <p id="message" class="message">Loading semantic API...</p>
+      <p id="message" class="message">Loading game...</p>
     </section>
 
     <section class="results-panel">
@@ -991,7 +991,7 @@
       } catch (error) {
         loading = false;
         setEnabled(false);
-        messageEl.textContent = "Semantic API unavailable. Try again later.";
+        messageEl.textContent = "Game unavailable. Try again later.";
         console.warn("Unable to load semantic words.", error);
       }
     }
@@ -1189,12 +1189,7 @@
     }
 
     function getHintUnavailableMessage() {
-      const bestRow = getBestShownRank();
-      if (Number.isFinite(bestRow) && bestRow < UNKNOWN_RANK) {
-        return "No better hint is left near your best row.";
-      }
-
-      return "No useful hint found yet.";
+      return "No hint available right now.";
     }
 
     function getResultMessage(word, rank) {
@@ -1542,21 +1537,17 @@
       const list = document.createElement("ul");
       [
         "Guess any word.",
-        "The number shows how close your guess is to the hidden word.",
-        "Lower numbers are better. #1 is the answer.",
-        "The first hint asks for confirmation. Later hints do not.",
-        "If every row is still red, the hint makes a bigger jump toward orange or green.",
-        "Otherwise, hints aim for a meaningful lower number instead of tiny steps.",
-        "If the only hint left would reveal the answer, you get a warning first."
+        "The number shows how close you are to the hidden word.",
+        "Lower numbers are better.",
+        "#1 is the answer.",
+        "Use hints if you get stuck."
       ].forEach((text) => {
         const item = document.createElement("li");
         item.textContent = text;
         list.appendChild(item);
       });
 
-      const note = document.createElement("p");
-      note.textContent = "Semantic scores use the Datamuse word API, so some weird guesses may miss even when they feel related.";
-      modalBody.append(list, note);
+      modalBody.appendChild(list);
       setModalActions([{ label: "Got It", primary: true, onClick: closeModal }]);
     }
 
@@ -1586,7 +1577,7 @@
     function showRevealHintWarning() {
       openModal("Reveal Answer?");
       const text = document.createElement("p");
-      text.textContent = "The best hint left is the hidden word. Revealing it will end this puzzle.";
+      text.textContent = "This hint reveals the answer and ends the puzzle.";
       modalBody.appendChild(text);
       setModalActions([
         { label: "Reveal", primary: true, onClick: revealAnswerHint },
