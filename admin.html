@@ -122,6 +122,141 @@
       padding: 0;
     }
 
+    .profile-wrap {
+      position: relative;
+      z-index: 12;
+    }
+
+    .profile-wrap[hidden],
+    .profile-menu[hidden],
+    .profile-avatar[hidden],
+    .profile-initial[hidden],
+    .profile-form[hidden] {
+      display: none;
+    }
+
+    .profile-button {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .profile-button:hover,
+    .profile-button[aria-expanded="true"] {
+      background: var(--correct);
+      color: #ffffff;
+    }
+
+    .profile-avatar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .profile-initial {
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .profile-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: min(260px, calc(100vw - 28px));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.36);
+    }
+
+    .profile-name {
+      font-weight: 900;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-email,
+    .profile-feedback {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .profile-email {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-form {
+      display: grid;
+      gap: 7px;
+      padding-top: 2px;
+    }
+
+    .profile-form label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .profile-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+    }
+
+    .profile-input {
+      min-width: 0;
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--input-bg);
+      color: var(--text);
+      padding: 0 10px;
+      font-weight: 800;
+    }
+
+    .profile-save,
+    .profile-action {
+      min-height: 38px;
+      border: 0;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .profile-save {
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 0 10px;
+    }
+
+    .profile-action {
+      width: 100%;
+      background: var(--correct);
+      color: #ffffff;
+    }
+
     main {
       padding: 22px 0 40px;
     }
@@ -381,8 +516,27 @@
       <div class="header-actions">
         <a class="button" href="index.html">Game</a>
         <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
-        <button id="refreshButton" class="primary" type="button" hidden>Refresh</button>
-        <button id="signOutButton" type="button" hidden>Sign Out</button>
+        <div id="profileWrap" class="profile-wrap" hidden>
+          <button id="profileButton" class="profile-button" type="button" title="Account" aria-label="Account" aria-expanded="false">
+            <img id="profileAvatar" class="profile-avatar" alt="" hidden />
+            <span id="profileInitial" class="profile-initial" aria-hidden="true">?</span>
+          </button>
+          <div id="profileMenu" class="profile-menu" role="menu" hidden>
+            <div>
+              <div id="profileName" class="profile-name">Guest</div>
+              <div id="profileEmail" class="profile-email">Sign in to set a username</div>
+            </div>
+            <form id="profileUsernameForm" class="profile-form" hidden>
+              <label for="profileUsernameInput">Username</label>
+              <div class="profile-row">
+                <input id="profileUsernameInput" class="profile-input" type="text" maxlength="24" autocomplete="nickname" />
+                <button id="profileUsernameSave" class="profile-save" type="submit">Save</button>
+              </div>
+              <p id="profileFeedback" class="profile-feedback"></p>
+            </form>
+            <button id="profileActionButton" class="profile-action" type="button">Sign in with Google</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -418,113 +572,6 @@
       </div>
     </section>
 
-    <details class="panel">
-      <summary>Admin Tools</summary>
-      <section id="authPanel" class="auth-panel" hidden>
-        <h2>Admin Login</h2>
-        <p>Sign in with your admin account.</p>
-        <form id="authForm" class="auth-form">
-          <input id="emailInput" type="email" autocomplete="email" placeholder="Email" required />
-          <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" required />
-          <button id="loginButton" class="primary" type="submit">Sign In</button>
-          <p id="authError" class="auth-error" role="alert"></p>
-        </form>
-      </section>
-
-      <section id="dashboard" hidden>
-      <p id="status" class="status">Loading history...</p>
-
-      <details class="panel" open>
-        <summary>Filters</summary>
-        <div class="filters">
-          <select id="typeFilter" aria-label="Game type">
-            <option value="all">All games</option>
-            <option value="daily">Daily only</option>
-            <option value="casual">Casual only</option>
-            <option value="custom">Custom only</option>
-          </select>
-          <select id="resultFilter" aria-label="Result">
-            <option value="all">All results</option>
-            <option value="won">Wins only</option>
-            <option value="lost">Losses only</option>
-          </select>
-          <select id="playerFilter" aria-label="Player">
-            <option value="all">All players</option>
-          </select>
-          <select id="sortFilter" aria-label="Sort">
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="tries">Fewest tries</option>
-            <option value="player">Player name</option>
-          </select>
-          <input id="dateFilter" type="date" aria-label="Date" />
-          <input id="searchFilter" type="search" placeholder="Search puzzle, answer, or player" aria-label="Search" />
-        </div>
-      </details>
-
-      <section id="statsGrid" class="stats-grid" aria-label="Summary stats"></section>
-
-      <details class="panel" open>
-        <summary>Admin Leaderboard</summary>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Player</th>
-                <th>Plays</th>
-                <th>Wins</th>
-                <th>Win %</th>
-                <th>Avg Tries</th>
-              </tr>
-            </thead>
-            <tbody id="leaderboardBody"></tbody>
-          </table>
-        </div>
-        <button id="leaderboardMoreButton" class="leaderboard-more" type="button" hidden>See More</button>
-      </details>
-
-      <details class="panel">
-        <summary>By Puzzle</summary>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Puzzle</th>
-                <th>Type</th>
-                <th>Answer</th>
-                <th>Plays</th>
-                <th>Win %</th>
-                <th>Avg Tries</th>
-                <th>Last Played</th>
-              </tr>
-            </thead>
-            <tbody id="puzzleBody"></tbody>
-          </table>
-        </div>
-      </details>
-
-      <details class="panel" open>
-        <summary>Play History</summary>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date & Time</th>
-                <th>Player</th>
-                <th>Puzzle</th>
-                <th>Type</th>
-                <th>Answer</th>
-                <th>Result</th>
-                <th>Tries</th>
-              </tr>
-            </thead>
-            <tbody id="historyBody"></tbody>
-          </table>
-        </div>
-      </details>
-      </section>
-    </details>
   </main>
 
   <footer class="site-credit">made by lordGami</footer>
@@ -564,6 +611,17 @@
     const publicLeaderboardBody = document.getElementById("publicLeaderboardBody");
     const publicLimitFilter = document.getElementById("publicLimitFilter");
     const publicRefreshButton = document.getElementById("publicRefreshButton");
+    const profileWrap = document.getElementById("profileWrap");
+    const profileButton = document.getElementById("profileButton");
+    const profileAvatar = document.getElementById("profileAvatar");
+    const profileInitial = document.getElementById("profileInitial");
+    const profileMenu = document.getElementById("profileMenu");
+    const profileName = document.getElementById("profileName");
+    const profileEmail = document.getElementById("profileEmail");
+    const profileActionButton = document.getElementById("profileActionButton");
+    const profileUsernameForm = document.getElementById("profileUsernameForm");
+    const profileUsernameInput = document.getElementById("profileUsernameInput");
+    const profileFeedback = document.getElementById("profileFeedback");
     const statsGrid = document.getElementById("statsGrid");
     const leaderboardBody = document.getElementById("leaderboardBody");
     const leaderboardMoreButton = document.getElementById("leaderboardMoreButton");
@@ -581,26 +639,32 @@
 
     let attempts = [];
     let leaderboardExpanded = false;
+    let activePlayerSession = null;
 
     initTheme();
+    initAccountSystem();
     loadPublicLeaderboard();
-    initAuth();
-    authForm.addEventListener("submit", signIn);
     themeButton.addEventListener("click", toggleTheme);
     publicLimitFilter.addEventListener("change", loadPublicLeaderboard);
     publicRefreshButton.addEventListener("click", loadPublicLeaderboard);
-    refreshButton.addEventListener("click", loadHistory);
-    signOutButton.addEventListener("click", signOut);
-    leaderboardMoreButton.addEventListener("click", () => {
-      leaderboardExpanded = !leaderboardExpanded;
-      render();
+    profileButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      await refreshAccountSession();
+      toggleProfileMenu();
     });
-    typeFilter.addEventListener("change", render);
-    resultFilter.addEventListener("change", render);
-    playerFilter.addEventListener("change", render);
-    sortFilter.addEventListener("change", render);
-    dateFilter.addEventListener("change", render);
-    searchFilter.addEventListener("input", render);
+    profileActionButton.addEventListener("click", () => {
+      if (activePlayerSession) {
+        signOutAccount();
+      } else {
+        startGoogleSignIn();
+      }
+    });
+    profileUsernameForm.addEventListener("submit", saveProfileUsername);
+    document.addEventListener("click", (event) => {
+      if (!profileWrap.contains(event.target)) {
+        closeProfileMenu();
+      }
+    });
 
     function initTheme() {
       const savedTheme = localStorage.getItem(themeKey);
@@ -621,12 +685,129 @@
       setTheme(nextTheme);
     }
 
+    async function initAccountSystem() {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        profileWrap.hidden = true;
+        return;
+      }
+
+      profileWrap.hidden = false;
+      try {
+        const session = await window.WordleBackend.initPlayerAuth();
+        updateAccountUi(session);
+      } catch (error) {
+        console.warn("Account sign-in failed.", error);
+        updateAccountUi(null);
+      }
+    }
+
+    async function refreshAccountSession() {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        updateAccountUi(null);
+        return null;
+      }
+
+      const session = await window.WordleBackend.getValidPlayerSession();
+      updateAccountUi(session);
+      return session;
+    }
+
+    function updateAccountUi(session) {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) return;
+      activePlayerSession = session;
+
+      const displayName = session ? window.WordleBackend.getPlayerDisplayName(session) : "Guest";
+      const email = session && session.user && session.user.email ? session.user.email : "";
+      const avatarUrl = session && window.WordleBackend.getPlayerAvatarUrl
+        ? window.WordleBackend.getPlayerAvatarUrl(session)
+        : "";
+
+      profileName.textContent = displayName;
+      profileEmail.textContent = email || (session ? "Signed in" : "Sign in to set a username");
+      profileActionButton.textContent = session ? "Sign Out" : "Sign in with Google";
+      profileButton.title = session ? displayName : "Account";
+      profileButton.setAttribute("aria-label", session ? `Account: ${displayName}` : "Account");
+      profileUsernameForm.hidden = !session;
+      profileUsernameInput.value = session ? displayName : "";
+      profileFeedback.textContent = "";
+
+      if (avatarUrl) {
+        profileAvatar.src = avatarUrl;
+        profileAvatar.hidden = false;
+        profileInitial.hidden = true;
+      } else {
+        profileAvatar.removeAttribute("src");
+        profileAvatar.hidden = true;
+        profileInitial.hidden = false;
+        profileInitial.textContent = session ? displayName.trim().charAt(0).toUpperCase() || "P" : "?";
+      }
+    }
+
+    async function startGoogleSignIn() {
+      closeProfileMenu();
+
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        profileFeedback.textContent = "Sign in unavailable.";
+        return;
+      }
+
+      try {
+        await window.WordleBackend.startGoogleSignIn();
+      } catch (error) {
+        console.warn("Google sign-in failed.", error);
+        profileFeedback.textContent = "Sign in failed.";
+      }
+    }
+
+    async function saveProfileUsername(event) {
+      event.preventDefault();
+
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled() || !activePlayerSession) {
+        profileFeedback.textContent = "Sign in first.";
+        return;
+      }
+
+      const username = profileUsernameInput.value.trim().replace(/\s+/g, " ");
+      profileUsernameInput.value = username;
+
+      try {
+        await window.WordleBackend.updatePlayerUsername(username);
+        const session = await refreshAccountSession();
+        activePlayerSession = session;
+        profileFeedback.textContent = "Saved.";
+        loadPublicLeaderboard();
+      } catch (error) {
+        profileFeedback.textContent = error.message || "Could not save.";
+      }
+    }
+
+    async function signOutAccount() {
+      if (window.WordleBackend && window.WordleBackend.isEnabled()) {
+        await window.WordleBackend.signOutPlayer();
+      }
+
+      updateAccountUi(null);
+      closeProfileMenu();
+    }
+
+    function toggleProfileMenu(forceOpen) {
+      if (profileWrap.hidden) return;
+      const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : profileMenu.hidden;
+      profileMenu.hidden = !shouldOpen;
+      profileButton.setAttribute("aria-expanded", String(shouldOpen));
+    }
+
+    function closeProfileMenu() {
+      profileMenu.hidden = true;
+      profileButton.setAttribute("aria-expanded", "false");
+    }
+
     async function loadPublicLeaderboard() {
       publicLeaderboardStatus.textContent = "Loading leaderboard...";
       publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Loading...</td></tr>`;
 
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
-        publicLeaderboardStatus.textContent = "Leaderboard is not configured yet.";
+        publicLeaderboardStatus.textContent = "Leaderboard is not ready yet.";
         publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">No leaderboard yet.</td></tr>`;
         return;
       }
@@ -639,8 +820,8 @@
           : "No signed-in plays yet.";
       } catch (error) {
         console.warn("Unable to load public leaderboard.", error);
-        publicLeaderboardStatus.textContent = "Leaderboard needs the latest database update.";
-        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Run the updated schema, then refresh.</td></tr>`;
+        publicLeaderboardStatus.textContent = "Leaderboard is not ready yet.";
+        publicLeaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">Try again in a bit.</td></tr>`;
       }
     }
 
@@ -668,7 +849,7 @@
 
     async function initAuth() {
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
-        showLogin("Online history is not configured.");
+        showLogin("Leaderboard is not ready.");
         return;
       }
 
@@ -731,17 +912,17 @@
       if (window.WordleBackend && window.WordleBackend.isEnabled()) {
         try {
           remoteAttempts = await window.WordleBackend.fetchAttempts(2000);
-          statusEl.textContent = `Loaded ${remoteAttempts.length} shared plays.`;
+          statusEl.textContent = `Loaded ${remoteAttempts.length} plays.`;
         } catch (error) {
-          console.warn("Unable to load shared history.", error);
-          statusEl.textContent = `Could not load shared history: ${error.message}`;
+          console.warn("Unable to load plays.", error);
+          statusEl.textContent = `Could not load plays: ${error.message}`;
           if (String(error.message).includes("Please sign in") || String(error.message).includes("JWT")) {
             showLogin("Please sign in again.");
             return;
           }
         }
       } else {
-        statusEl.textContent = "Online history is not configured yet.";
+        statusEl.textContent = "Leaderboard is not ready yet.";
       }
 
       attempts = mergeAttempts(remoteAttempts, []).map(normalizeAttempt);
