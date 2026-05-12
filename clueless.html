@@ -6,6 +6,7 @@
   <title>Clueless</title>
   <style>
     :root {
+      --sidebar-width: 172px;
       --bg: #131617;
       --surface: #1b1e20;
       --surface-2: #24282b;
@@ -47,6 +48,10 @@
       align-items: center;
     }
 
+    body.sidebar-open {
+      overflow: hidden;
+    }
+
     button,
     input {
       font: inherit;
@@ -56,6 +61,98 @@
     input:focus-visible {
       outline: 3px solid var(--focus);
       outline-offset: 2px;
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      background: rgba(0, 0, 0, 0.46);
+      z-index: 11;
+    }
+
+    body.sidebar-open .sidebar-backdrop {
+      display: block;
+    }
+
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-width);
+      background: var(--surface);
+      padding: 14px 10px;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transform: translateX(calc(-100% - 1px));
+      transition: transform 0.2s ease;
+      box-shadow: 16px 0 36px rgba(0, 0, 0, 0.32);
+    }
+
+    body.sidebar-open .side-nav {
+      transform: translateX(0);
+    }
+
+    .side-brand,
+    .side-link {
+      width: 100%;
+      min-height: 46px;
+      border: 0;
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 900;
+      text-align: left;
+    }
+
+    .side-brand {
+      background: var(--correct);
+      padding: 0 10px;
+      letter-spacing: 0;
+    }
+
+    .mode-links {
+      display: grid;
+      gap: 8px;
+    }
+
+    .side-link {
+      background: transparent;
+      padding: 0 10px;
+    }
+
+    .side-link:hover,
+    .side-link.active {
+      background: var(--surface-2);
+    }
+
+    .side-link.active {
+      box-shadow: inset 0 0 0 1px rgba(82, 196, 33, 0.5);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      right: 12px;
+      bottom: 14px;
+      width: 46px;
+      height: 46px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle:hover {
+      background: var(--input-bg);
     }
 
     header {
@@ -108,7 +205,7 @@
       min-width: 44px;
       height: 44px;
       border: 1px solid var(--border);
-      border-radius: 50%;
+      border-radius: 14px;
       background: transparent;
       color: var(--text);
       font-weight: 900;
@@ -125,23 +222,23 @@
       font-size: 0;
     }
 
-    .menu-link {
-      position: relative;
-      min-width: 26px;
-      height: 26px;
-      font-size: 0;
-      line-height: 1;
+    .menu-button {
+      border: 0;
+      background: transparent;
+      border-radius: 10px;
     }
 
-    .menu-link::before {
-      content: "";
-      width: 17px;
-      height: 13px;
-      background:
-        linear-gradient(var(--muted), var(--muted)) 0 0 / 17px 2px no-repeat,
-        linear-gradient(var(--muted), var(--muted)) 0 50% / 17px 2px no-repeat,
-        linear-gradient(var(--muted), var(--muted)) 0 100% / 17px 2px no-repeat;
+    .hamburger {
+      width: 26px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .hamburger span {
+      display: block;
+      height: 3px;
       border-radius: 999px;
+      background: currentColor;
     }
 
     main {
@@ -164,7 +261,7 @@
 
     .stat {
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 12px;
       background: var(--surface-2);
       padding: 12px;
     }
@@ -195,7 +292,7 @@
       min-width: 0;
       min-height: 45px;
       border: 2px solid var(--border);
-      border-radius: 5px;
+      border-radius: 12px;
       background: var(--input-bg);
       display: grid;
       grid-template-columns: 28px minmax(0, 1fr) auto;
@@ -267,7 +364,7 @@
     .secondary-action {
       min-height: 45px;
       border: 0;
-      border-radius: 5px;
+      border-radius: 12px;
       background: var(--surface-2);
       color: var(--text);
       font-weight: 900;
@@ -342,7 +439,7 @@
       align-items: center;
       gap: 12px;
       border: 0;
-      border-radius: 6px;
+      border-radius: 12px;
       background: var(--surface);
       min-height: 43px;
       padding: 0 14px;
@@ -356,7 +453,7 @@
       inset: 0 auto 0 0;
       width: var(--fill);
       min-width: 8px;
-      border-radius: 6px 0 0 6px;
+      border-radius: 12px 0 0 12px;
       background: var(--bar-color);
       z-index: 0;
     }
@@ -435,7 +532,7 @@
       overflow: auto;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 14px;
       padding: 22px;
       box-shadow: 0 12px 46px rgba(0, 0, 0, 0.5);
     }
@@ -447,7 +544,7 @@
       width: 34px;
       height: 34px;
       border: 0;
-      border-radius: 4px;
+      border-radius: 10px;
       color: var(--muted);
       background: transparent;
       cursor: pointer;
@@ -480,7 +577,7 @@
       min-width: 96px;
       overflow: visible;
       clip: auto;
-      border-radius: 5px;
+      border-radius: 10px;
       border: 1px solid var(--border);
       padding: 0 16px;
       background: var(--surface-2);
@@ -546,13 +643,9 @@
         font-size: 16px;
       }
 
-      .menu-link::before {
+      .hamburger {
         width: 23px;
-        height: 15px;
-        background:
-          linear-gradient(var(--muted), var(--muted)) 0 0 / 23px 3px no-repeat,
-          linear-gradient(var(--muted), var(--muted)) 0 50% / 23px 3px no-repeat,
-          linear-gradient(var(--muted), var(--muted)) 0 100% / 23px 3px no-repeat;
+        gap: 5px;
       }
 
       .header-actions.right {
@@ -635,11 +728,27 @@
   </style>
 </head>
 <body>
+  <aside class="side-nav" aria-label="Game modes">
+    <button id="homeButton" class="side-brand" type="button">LORDGAMES</button>
+    <nav class="mode-links" aria-label="Game modes">
+      <button id="sideDailyButton" class="side-link" type="button">Daily</button>
+      <button id="sideCasualButton" class="side-link" type="button">Casual</button>
+      <button id="sideCluelessButton" class="side-link active" type="button">Clueless</button>
+    </nav>
+    <button id="themeButton" class="theme-toggle" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
+  </aside>
+  <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
   <header>
     <div class="header-inner">
       <div class="header-actions">
-        <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
-        <a class="text-button menu-link" href="index.html" title="Home" aria-label="Home">=</a>
+        <button id="menuButton" class="icon-button menu-button" type="button" title="Menu" aria-label="Open game menu" aria-expanded="false">
+          <span class="hamburger" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </button>
       </div>
       <h1>Clueless</h1>
       <div class="header-actions right">
@@ -735,6 +844,7 @@
     const answer = answerWords[positiveModulo(puzzleId, answerWords.length)];
     const relatedByWord = new Map();
     const reverseCache = new Map();
+    const wordCheckCache = new Map();
 
     let rows = loadState();
     let solved = rows.some((row) => row.word === answer);
@@ -744,6 +854,12 @@
     let airballSoundBufferPromise = null;
     let pendingHint = null;
 
+    const homeButton = document.getElementById("homeButton");
+    const sideDailyButton = document.getElementById("sideDailyButton");
+    const sideCasualButton = document.getElementById("sideCasualButton");
+    const sideCluelessButton = document.getElementById("sideCluelessButton");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+    const menuButton = document.getElementById("menuButton");
     const themeButton = document.getElementById("themeButton");
     const helpButton = document.getElementById("helpButton");
     const guessForm = document.getElementById("guessForm");
@@ -768,7 +884,22 @@
     loadRelatedWords();
 
     function wireControls() {
-      themeButton.addEventListener("click", toggleTheme);
+      menuButton.addEventListener("click", toggleSidebar);
+      sidebarBackdrop.addEventListener("click", closeSidebar);
+      homeButton.addEventListener("click", () => {
+        closeSidebar();
+        window.location.href = "index.html";
+      });
+      sideDailyButton.addEventListener("click", () => openWordlordMode("daily"));
+      sideCasualButton.addEventListener("click", () => openWordlordMode("casual"));
+      sideCluelessButton.addEventListener("click", () => {
+        closeSidebar();
+        focusGuessInput();
+      });
+      themeButton.addEventListener("click", () => {
+        toggleTheme();
+        focusGuessInput();
+      });
       helpButton.addEventListener("click", showHelp);
       hintButton.addEventListener("click", giveHint);
       newGameButton.addEventListener("click", startNewPuzzle);
@@ -780,6 +911,12 @@
         if (event.target === modalBackdrop) closeModal();
       });
       modalClose.addEventListener("click", closeModal);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeSidebar();
+          closeModal();
+        }
+      });
     }
 
     function initTheme() {
@@ -792,12 +929,41 @@
       document.documentElement.dataset.theme = nextTheme;
       themeButton.textContent = nextTheme === "light" ? "☀" : "☾";
       themeButton.title = nextTheme === "light" ? "Switch to dark mode" : "Switch to light mode";
+      themeButton.setAttribute("aria-label", themeButton.title);
     }
 
     function toggleTheme() {
       const nextTheme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
       localStorage.setItem(themeKey, nextTheme);
       setTheme(nextTheme);
+    }
+
+    function toggleSidebar() {
+      const shouldOpen = !document.body.classList.contains("sidebar-open");
+      document.body.classList.toggle("sidebar-open", shouldOpen);
+      menuButton.setAttribute("aria-expanded", String(shouldOpen));
+      menuButton.setAttribute("aria-label", shouldOpen ? "Close game menu" : "Open game menu");
+    }
+
+    function closeSidebar() {
+      document.body.classList.remove("sidebar-open");
+      menuButton.setAttribute("aria-expanded", "false");
+      menuButton.setAttribute("aria-label", "Open game menu");
+    }
+
+    function openWordlordMode(mode) {
+      const url = new URL("index.html", window.location.href);
+      url.search = "";
+
+      if (mode === "casual") {
+        url.searchParams.set("mode", "casual");
+        url.searchParams.set("day", String(Math.floor(Math.random() * 900000) + 100000));
+      } else {
+        url.searchParams.set("day", String(Math.floor((Date.now() - BASE_DAY) / DAY_MS)));
+      }
+
+      url.hash = "";
+      window.location.href = url.toString();
     }
 
     async function loadRelatedWords() {
@@ -862,8 +1028,18 @@
         return;
       }
 
-      setMessage("Calculating...");
+      setMessage("Checking word...");
       setBusy(true);
+
+      const realWord = await isRealWord(word);
+      if (!realWord) {
+        setBusy(false);
+        setMessage("That doesn't look like a real word.");
+        focusGuessInput();
+        return;
+      }
+
+      setMessage("Calculating...");
       const rank = await scoreGuess(word);
       setBusy(false);
 
@@ -888,6 +1064,31 @@
       saveState();
       render();
       focusGuessInput();
+    }
+
+    async function isRealWord(word) {
+      if (word === answer || relatedByWord.has(word)) return true;
+      if (!/^[a-z]{2,24}$/.test(word)) return false;
+      if (wordCheckCache.has(word)) return wordCheckCache.get(word);
+
+      try {
+        const url = new URL(DATAMUSE_API);
+        url.searchParams.set("sp", word);
+        url.searchParams.set("md", "d");
+        url.searchParams.set("max", "1");
+
+        const response = await fetch(url.toString());
+        if (!response.ok) throw new Error(`Datamuse returned ${response.status}`);
+
+        const matches = await response.json();
+        const isValid = Array.isArray(matches) && matches.some((item) => apiWord(item.word) === word);
+        wordCheckCache.set(word, isValid);
+        return isValid;
+      } catch (error) {
+        console.warn("Unable to verify word.", error);
+        wordCheckCache.set(word, false);
+        return false;
+      }
     }
 
     async function scoreGuess(word) {
@@ -1441,6 +1642,7 @@
 
     function closeModal() {
       modalBackdrop.classList.remove("show");
+      focusGuessInput();
     }
 
     function setModalActions(actions) {
@@ -1451,7 +1653,10 @@
         button.type = "button";
         button.textContent = action.label;
         button.className = action.primary ? "primary-action" : "text-button";
-        button.addEventListener("click", action.onClick);
+        button.addEventListener("click", () => {
+          action.onClick();
+          if (!solved) focusGuessInput();
+        });
         modalActions.appendChild(button);
       });
     }
