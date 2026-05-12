@@ -112,7 +112,12 @@
       throw new Error("Supabase is not configured.");
     }
 
+    if (window.location.protocol === "file:") {
+      throw new Error("Google sign-in only works from the live GitHub Pages URL.");
+    }
+
     const redirectTo = new URL(window.location.href);
+    redirectTo.search = "";
     redirectTo.hash = "";
 
     const authUrl = new URL(`${getBaseUrl()}/auth/v1/authorize`);
