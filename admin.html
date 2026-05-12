@@ -201,7 +201,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 780px;
+      min-width: 840px;
     }
 
     th,
@@ -248,6 +248,10 @@
       padding: 26px 16px;
       color: var(--muted);
       text-align: center;
+    }
+
+    .leaderboard-more {
+      margin: 12px 16px 16px;
     }
 
     .auth-panel {
@@ -324,7 +328,7 @@
   <main>
     <section id="authPanel" class="auth-panel" hidden>
       <h2>Admin Login</h2>
-      <p>Sign in with the Supabase Auth user you created.</p>
+      <p>Sign in with your admin account.</p>
       <form id="authForm" class="auth-form">
         <input id="emailInput" type="email" autocomplete="email" placeholder="Email" required />
         <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" required />
@@ -348,6 +352,26 @@
       </div>
 
       <section id="statsGrid" class="stats-grid" aria-label="Summary stats"></section>
+
+      <section class="panel">
+        <h2>Leaderboard</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Player</th>
+                <th>Plays</th>
+                <th>Wins</th>
+                <th>Win %</th>
+                <th>Avg Tries</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+        <button id="leaderboardMoreButton" class="leaderboard-more" type="button" hidden>See More</button>
+      </section>
 
       <section class="panel">
         <h2>By Puzzle</h2>
@@ -376,6 +400,7 @@
             <thead>
               <tr>
                 <th>Date & Time</th>
+                <th>Player</th>
                 <th>Puzzle</th>
                 <th>Type</th>
                 <th>Answer</th>
@@ -424,6 +449,8 @@
     const loginButton = document.getElementById("loginButton");
     const authError = document.getElementById("authError");
     const statsGrid = document.getElementById("statsGrid");
+    const leaderboardBody = document.getElementById("leaderboardBody");
+    const leaderboardMoreButton = document.getElementById("leaderboardMoreButton");
     const puzzleBody = document.getElementById("puzzleBody");
     const historyBody = document.getElementById("historyBody");
     const themeButton = document.getElementById("themeButton");
@@ -434,6 +461,7 @@
     const searchFilter = document.getElementById("searchFilter");
 
     let attempts = [];
+    let leaderboardExpanded = false;
 
     initTheme();
     initAuth();
@@ -441,6 +469,10 @@
     themeButton.addEventListener("click", toggleTheme);
     refreshButton.addEventListener("click", loadHistory);
     signOutButton.addEventListener("click", signOut);
+    leaderboardMoreButton.addEventListener("click", () => {
+      leaderboardExpanded = !leaderboardExpanded;
+      render();
+    });
     typeFilter.addEventListener("change", render);
     dateFilter.addEventListener("change", render);
     searchFilter.addEventListener("input", render);
@@ -466,7 +498,7 @@
 
     async function initAuth() {
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
-        showLogin("Supabase is not configured.");
+        showLogin("Online history is not configured.");
         return;
       }
 
@@ -539,7 +571,7 @@
           }
         }
       } else {
-        statusEl.textContent = "Supabase is not configured yet.";
+        statusEl.textContent = "Online history is not configured yet.";
       }
 
       attempts = mergeAttempts(remoteAttempts, []).map(normalizeAttempt);
@@ -577,8 +609,25 @@
         answer: attempt.answer || "",
         won: Boolean(attempt.won),
         guesses_used: Number(attempt.guesses_used) || 0,
-        created_at: attempt.created_at || new Date().toISOString()
+        created_at: attempt.created_at || new Date().toISOString(),
+        player_label: getPlayerLabel(attempt)
       };
+    }
+
+    function getPlayerLabel(attempt) {
+      if (attempt.player_name) return attempt.player_name;
+      if (attempt.player_email) return attempt.player_email;
+      if (attempt.user_id) return "Signed-in player";
+      if (attempt.player_id) return `Guest ${String(attempt.player_id).slice(0, 5)}`;
+      return "Guest";
+    }
+
+    function getPlayerIdentity(attempt) {
+      return attempt.user_id
+        || attempt.player_email
+        || attempt.player_id
+        || attempt.player_label
+        || "guest";
     }
 
     function getFilteredAttempts() {
@@ -590,7 +639,7 @@
         if (type !== "all" && attempt.puzzle_kind !== type) return false;
         if (date && toDateInputValue(attempt.created_at) !== date) return false;
         if (search) {
-          const haystack = `${attempt.puzzle_label} ${attempt.answer} ${attempt.puzzle_key}`.toLowerCase();
+          const haystack = `${attempt.puzzle_label} ${attempt.answer} ${attempt.puzzle_key} ${attempt.player_label}`.toLowerCase();
           if (!haystack.includes(search)) return false;
         }
         return true;
@@ -600,6 +649,7 @@
     function render() {
       const filtered = getFilteredAttempts().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       renderStats(filtered);
+      renderLeaderboard(filtered);
       renderPuzzleTable(filtered);
       renderHistoryTable(filtered);
     }
@@ -648,6 +698,69 @@
 
     function positiveModulo(value, size) {
       return ((value % size) + size) % size;
+    }
+
+    function renderLeaderboard(rows) {
+      const groups = new Map();
+
+      rows.forEach((attempt) => {
+        const key = getPlayerIdentity(attempt);
+        const group = groups.get(key) || {
+          player: attempt.player_label,
+          plays: 0,
+          wins: 0,
+          tries: [],
+          lastPlayed: attempt.created_at
+        };
+
+        if (attempt.player_label && attempt.player_label !== "Guest") {
+          group.player = attempt.player_label;
+        }
+        group.plays += 1;
+        if (attempt.won) {
+          group.wins += 1;
+          group.tries.push(attempt.guesses_used);
+        }
+        if (new Date(attempt.created_at) > new Date(group.lastPlayed)) {
+          group.lastPlayed = attempt.created_at;
+        }
+        groups.set(key, group);
+      });
+
+      const leaderboard = [...groups.values()].sort((a, b) => {
+        const winDiff = b.wins - a.wins;
+        if (winDiff) return winDiff;
+        const rateDiff = (b.wins / Math.max(1, b.plays)) - (a.wins / Math.max(1, a.plays));
+        if (rateDiff) return rateDiff;
+        const aAvg = a.tries.length ? average(a.tries) : 99;
+        const bAvg = b.tries.length ? average(b.tries) : 99;
+        return aAvg - bAvg;
+      });
+
+      const visibleRows = leaderboardExpanded ? leaderboard : leaderboard.slice(0, 10);
+      leaderboardBody.innerHTML = "";
+      leaderboardMoreButton.hidden = leaderboard.length <= 10;
+      leaderboardMoreButton.textContent = leaderboardExpanded ? "Show Less" : "See More";
+
+      if (!visibleRows.length) {
+        leaderboardBody.innerHTML = `<tr><td class="empty" colspan="6">No players match these filters.</td></tr>`;
+        return;
+      }
+
+      visibleRows.forEach((group, index) => {
+        const winRate = group.plays ? Math.round((group.wins / group.plays) * 100) : 0;
+        const avgTries = group.tries.length ? average(group.tries).toFixed(1) : "-";
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${escapeHtml(group.player)}</td>
+          <td>${group.plays}</td>
+          <td>${group.wins}</td>
+          <td>${winRate}%</td>
+          <td>${avgTries}</td>
+        `;
+        leaderboardBody.appendChild(row);
+      });
     }
 
     function renderPuzzleTable(rows) {
@@ -705,7 +818,7 @@
       historyBody.innerHTML = "";
 
       if (!rows.length) {
-        historyBody.innerHTML = `<tr><td class="empty" colspan="6">No plays match these filters.</td></tr>`;
+        historyBody.innerHTML = `<tr><td class="empty" colspan="7">No plays match these filters.</td></tr>`;
         return;
       }
 
@@ -715,6 +828,7 @@
         const resultLabel = attempt.won ? "Won" : "Lost";
         row.innerHTML = `
           <td>${formatDateTime(attempt.created_at)}</td>
+          <td>${escapeHtml(attempt.player_label)}</td>
           <td>${escapeHtml(attempt.puzzle_label)}</td>
           <td>${escapeHtml(attempt.puzzle_kind)}</td>
           <td class="answer">${escapeHtml(attempt.answer)}</td>

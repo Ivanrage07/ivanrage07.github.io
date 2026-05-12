@@ -68,7 +68,7 @@
       inset: 0;
       display: none;
       background: rgba(0, 0, 0, 0.46);
-      z-index: 11;
+      z-index: 20;
     }
 
     body.sidebar-open .sidebar-backdrop {
@@ -83,7 +83,7 @@
       width: var(--sidebar-width);
       background: var(--surface);
       padding: 14px 10px;
-      z-index: 15;
+      z-index: 22;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -94,6 +94,10 @@
 
     body.sidebar-open .side-nav {
       transform: translateX(0);
+    }
+
+    body.sidebar-open .profile-wrap {
+      display: none;
     }
 
     .side-brand,
@@ -205,6 +209,96 @@
       justify-content: flex-end;
     }
 
+    .profile-wrap {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 24;
+    }
+
+    .profile-wrap[hidden],
+    .profile-menu[hidden],
+    .profile-avatar[hidden],
+    .profile-initial[hidden] {
+      display: none;
+    }
+
+    .profile-button {
+      width: 46px;
+      height: 46px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 0;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+    }
+
+    .profile-button:hover,
+    .profile-button[aria-expanded="true"] {
+      background: var(--input-bg);
+    }
+
+    .profile-avatar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .profile-initial {
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .profile-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: min(238px, calc(100vw - 20px));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.38);
+    }
+
+    .profile-name {
+      font-weight: 900;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-email {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-action {
+      width: 100%;
+      min-height: 40px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--correct);
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
     .icon-button,
     .text-button {
       min-width: 44px;
@@ -231,6 +325,7 @@
       border: 0;
       background: transparent;
       border-radius: 10px;
+      z-index: 24;
     }
 
     .hamburger {
@@ -707,6 +802,16 @@
         top: 32px;
       }
 
+      .profile-wrap {
+        top: 7px;
+        right: 8px;
+      }
+
+      .profile-button {
+        width: 40px;
+        height: 40px;
+      }
+
       h1 {
         top: 26px;
         font-size: 40px;
@@ -812,6 +917,20 @@
     </div>
   </header>
 
+  <div id="profileWrap" class="profile-wrap" hidden>
+    <button id="profileButton" class="profile-button" type="button" title="Account" aria-label="Account" aria-expanded="false">
+      <img id="profileAvatar" class="profile-avatar" alt="" hidden />
+      <span id="profileInitial" class="profile-initial" aria-hidden="true">?</span>
+    </button>
+    <div id="profileMenu" class="profile-menu" role="menu" hidden>
+      <div>
+        <div id="profileName" class="profile-name">Guest</div>
+        <div id="profileEmail" class="profile-email">Sign in to save your plays</div>
+      </div>
+      <button id="profileActionButton" class="profile-action" type="button">Sign in with Google</button>
+    </div>
+  </div>
+
   <div id="accountPrompt" class="account-prompt" role="status" hidden>
     <p>Sign in with Google to save your plays.</p>
     <button id="promptSignInButton" class="prompt-action" type="button">Sign in</button>
@@ -896,7 +1015,6 @@
     const themeKey = "wordle-clone:theme";
     const accountPromptKey = "wordle-clone:account-prompt-dismissed";
     const helpSeenKey = "clueless-help-seen";
-    const stateKey = `clueless:${getPuzzleId()}`;
     const answerWords = [
       "banana", "camera", "forest", "planet", "school", "doctor", "coffee", "garden", "window", "castle",
       "music", "pencil", "island", "market", "summer", "winter", "silver", "bridge", "button", "orange",
@@ -904,8 +1022,9 @@
       "thunder", "diamond", "library", "airport", "monster", "village", "teacher", "blanket", "machine", "holiday"
     ];
 
-    const puzzleId = getPuzzleId();
-    const answer = answerWords[positiveModulo(puzzleId, answerWords.length)];
+    let puzzleId = getPuzzleId();
+    let answer = answerWords[positiveModulo(puzzleId, answerWords.length)];
+    let stateKey = `clueless:${puzzleId}`;
     const relatedByWord = new Map();
     const reverseCache = new Map();
     const wordCheckCache = new Map();
@@ -917,6 +1036,7 @@
     let airballSoundBuffer = null;
     let airballSoundBufferPromise = null;
     let pendingHint = null;
+    let activePlayerSession = null;
 
     const homeButton = document.getElementById("homeButton");
     const sideDailyButton = document.getElementById("sideDailyButton");
@@ -928,6 +1048,14 @@
     const accountPrompt = document.getElementById("accountPrompt");
     const promptSignInButton = document.getElementById("promptSignInButton");
     const promptCloseButton = document.getElementById("promptCloseButton");
+    const profileWrap = document.getElementById("profileWrap");
+    const profileButton = document.getElementById("profileButton");
+    const profileAvatar = document.getElementById("profileAvatar");
+    const profileInitial = document.getElementById("profileInitial");
+    const profileMenu = document.getElementById("profileMenu");
+    const profileName = document.getElementById("profileName");
+    const profileEmail = document.getElementById("profileEmail");
+    const profileActionButton = document.getElementById("profileActionButton");
     const themeButton = document.getElementById("themeButton");
     const helpButton = document.getElementById("helpButton");
     const guessForm = document.getElementById("guessForm");
@@ -948,9 +1076,27 @@
 
     initTheme();
     wireControls();
-    initAccountSystem();
-    render();
-    loadRelatedWords();
+    startCluelord();
+
+    async function startCluelord() {
+      await initAccountSystem();
+      refreshPuzzleContext();
+      render();
+      loadRelatedWords();
+    }
+
+    function refreshPuzzleContext() {
+      const nextPuzzleId = getPuzzleId();
+      if (nextPuzzleId === puzzleId) return;
+
+      puzzleId = nextPuzzleId;
+      answer = answerWords[positiveModulo(puzzleId, answerWords.length)];
+      stateKey = `clueless:${puzzleId}`;
+      rows = loadState();
+      solved = rows.some((row) => row.word === answer);
+      relatedByWord.clear();
+      reverseCache.clear();
+    }
 
     function wireControls() {
       menuButton.addEventListener("click", toggleSidebar);
@@ -965,9 +1111,27 @@
         closeSidebar();
         focusGuessInput();
       });
-      accountButton.addEventListener("click", showAccountModal);
+      accountButton.addEventListener("click", async () => {
+        closeSidebar();
+        await refreshAccountSession();
+        toggleProfileMenu(true);
+        focusGuessInput();
+      });
       promptSignInButton.addEventListener("click", startGoogleSignIn);
       promptCloseButton.addEventListener("click", dismissAccountPrompt);
+      profileButton.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        await refreshAccountSession();
+        toggleProfileMenu();
+        focusGuessInput();
+      });
+      profileActionButton.addEventListener("click", () => {
+        if (activePlayerSession) {
+          signOutAccount();
+        } else {
+          startGoogleSignIn();
+        }
+      });
       themeButton.addEventListener("click", () => {
         toggleTheme();
         focusGuessInput();
@@ -987,6 +1151,12 @@
         if (event.key === "Escape") {
           closeSidebar();
           closeModal();
+          closeProfileMenu();
+        }
+      });
+      document.addEventListener("click", (event) => {
+        if (!profileWrap.contains(event.target)) {
+          closeProfileMenu();
         }
       });
     }
@@ -1013,6 +1183,7 @@
     function toggleSidebar() {
       const shouldOpen = !document.body.classList.contains("sidebar-open");
       document.body.classList.toggle("sidebar-open", shouldOpen);
+      if (shouldOpen) closeProfileMenu();
       menuButton.setAttribute("aria-expanded", String(shouldOpen));
       menuButton.setAttribute("aria-label", shouldOpen ? "Close game menu" : "Open game menu");
     }
@@ -1042,9 +1213,11 @@
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
         accountButton.hidden = true;
         accountPrompt.hidden = true;
+        profileWrap.hidden = true;
         return;
       }
 
+      profileWrap.hidden = false;
       const hadAuthCallback = window.location.hash.includes("access_token")
         || new URLSearchParams(window.location.search).has("code");
 
@@ -1070,12 +1243,47 @@
       }
     }
 
+    async function refreshAccountSession() {
+      if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
+        updateAccountUi(null);
+        return null;
+      }
+
+      const session = await window.WordleBackend.getValidPlayerSession();
+      updateAccountUi(session);
+      return session;
+    }
+
     function updateAccountUi(session) {
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) return;
+      activePlayerSession = session;
       accountPrompt.hidden = true;
       accountButton.textContent = session
-        ? `Account: ${window.WordleBackend.getPlayerDisplayName(session).split("@")[0]}`
+        ? "Account"
         : "Sign in";
+
+      const displayName = session ? window.WordleBackend.getPlayerDisplayName(session) : "Guest";
+      const email = session && session.user && session.user.email ? session.user.email : "";
+      const avatarUrl = session && window.WordleBackend.getPlayerAvatarUrl
+        ? window.WordleBackend.getPlayerAvatarUrl(session)
+        : "";
+
+      profileName.textContent = displayName;
+      profileEmail.textContent = email || (session ? "Signed in" : "Sign in to save your plays");
+      profileActionButton.textContent = session ? "Sign Out" : "Sign in with Google";
+      profileButton.title = session ? displayName : "Account";
+      profileButton.setAttribute("aria-label", session ? `Account: ${displayName}` : "Account");
+
+      if (avatarUrl) {
+        profileAvatar.src = avatarUrl;
+        profileAvatar.hidden = false;
+        profileInitial.hidden = true;
+      } else {
+        profileAvatar.removeAttribute("src");
+        profileAvatar.hidden = true;
+        profileInitial.hidden = false;
+        profileInitial.textContent = session ? displayName.trim().charAt(0).toUpperCase() || "P" : "?";
+      }
     }
 
     async function showAccountModal() {
@@ -1088,8 +1296,8 @@
 
       const text = document.createElement("p");
       text.textContent = session
-        ? `Signed in as ${window.WordleBackend.getPlayerDisplayName(session)}. Your plays save to Supabase.`
-        : "Sign in with Google to save your plays to Supabase.";
+        ? `Signed in as ${window.WordleBackend.getPlayerDisplayName(session)}. Your plays are saved to your account.`
+        : "Sign in with Google to save your plays.";
       modalBody.appendChild(text);
 
       setModalActions([
@@ -1102,9 +1310,10 @@
 
     async function startGoogleSignIn() {
       dismissAccountPrompt();
+      closeProfileMenu();
 
       if (!window.WordleBackend || !window.WordleBackend.isEnabled()) {
-        setMessage("Supabase not ready.");
+        setMessage("Sign in unavailable.");
         focusGuessInput();
         return;
       }
@@ -1124,6 +1333,7 @@
       }
 
       updateAccountUi(null);
+      closeProfileMenu();
       closeModal();
       setMessage("Signed out.");
     }
@@ -1132,6 +1342,18 @@
       accountPrompt.hidden = true;
       localStorage.setItem(accountPromptKey, "1");
       focusGuessInput();
+    }
+
+    function toggleProfileMenu(forceOpen) {
+      if (profileWrap.hidden) return;
+      const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : profileMenu.hidden;
+      profileMenu.hidden = !shouldOpen;
+      profileButton.setAttribute("aria-expanded", String(shouldOpen));
+    }
+
+    function closeProfileMenu() {
+      profileMenu.hidden = true;
+      profileButton.setAttribute("aria-expanded", "false");
     }
 
     async function loadRelatedWords() {

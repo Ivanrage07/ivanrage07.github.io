@@ -6,6 +6,7 @@
   let playerSession = null;
   const playerSessionKey = "wordle-clone:player-session";
   const playerPkceKey = "wordle-clone:player-pkce-verifier";
+  const playerReturnUrlKey = "wordle-clone:player-return-url";
 
   function hasRealValue(value) {
     return typeof value === "string" && value.trim() && !value.includes("YOUR_");
@@ -119,6 +120,7 @@
     const redirectTo = new URL(window.location.href);
     redirectTo.search = "";
     redirectTo.hash = "";
+    storePlayerReturnUrl();
 
     const authUrl = new URL(`${getBaseUrl()}/auth/v1/authorize`);
     authUrl.searchParams.set("provider", "google");
@@ -131,20 +133,22 @@
       authUrl.searchParams.set("code_challenge_method", "s256");
     }
 
-    window.location.href = authUrl.toString();
+    window.location.replace(authUrl.toString());
   }
 
   async function consumePlayerAuthCallback() {
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 
     if (hashParams.get("access_token")) {
-      clearAuthHash();
-      return attachUserToSession(normalizeSession({
+      const session = await attachUserToSession(normalizeSession({
         access_token: hashParams.get("access_token"),
         refresh_token: hashParams.get("refresh_token"),
         expires_in: Number(hashParams.get("expires_in")) || 3600,
         expires_at: Number(hashParams.get("expires_at")) || null
       }));
+      clearAuthHash();
+      restorePlayerReturnUrl();
+      return session;
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -158,6 +162,7 @@
     localStorage.removeItem(playerPkceKey);
     const session = await exchangePlayerCode(code, verifier);
     clearAuthCodeParam(params);
+    restorePlayerReturnUrl();
     return session;
   }
 
@@ -207,6 +212,35 @@
       url.searchParams.delete(key);
     });
     window.history.replaceState({}, document.title, url.toString());
+  }
+
+  function storePlayerReturnUrl() {
+    try {
+      const url = new URL(window.location.href);
+      url.hash = "";
+      localStorage.setItem(playerReturnUrlKey, url.toString());
+    } catch (error) {
+      localStorage.removeItem(playerReturnUrlKey);
+    }
+  }
+
+  function restorePlayerReturnUrl() {
+    if (!window.history || !window.history.replaceState) return;
+
+    const savedValue = localStorage.getItem(playerReturnUrlKey);
+    localStorage.removeItem(playerReturnUrlKey);
+    if (!savedValue) return;
+
+    try {
+      const savedUrl = new URL(savedValue, window.location.href);
+      const currentUrl = new URL(window.location.href);
+      if (savedUrl.origin !== currentUrl.origin || savedUrl.pathname !== currentUrl.pathname) {
+        return;
+      }
+      window.history.replaceState({}, document.title, savedUrl.toString());
+    } catch (error) {
+      localStorage.removeItem(playerReturnUrlKey);
+    }
   }
 
   function createCodeVerifier() {
@@ -299,12 +333,20 @@
 
     playerSession = null;
     localStorage.removeItem(playerSessionKey);
+    localStorage.removeItem(playerPkceKey);
+    localStorage.removeItem(playerReturnUrlKey);
   }
 
   function getPlayerDisplayName(session) {
     const user = session && session.user;
     const metadata = (user && user.user_metadata) || {};
     return metadata.full_name || metadata.name || metadata.preferred_username || (user && user.email) || "Player";
+  }
+
+  function getPlayerAvatarUrl(session) {
+    const user = session && session.user;
+    const metadata = (user && user.user_metadata) || {};
+    return metadata.avatar_url || metadata.picture || "";
   }
 
   function addPlayerAccountToPayload(payload, session) {
@@ -323,7 +365,6 @@
     const user = session && session.user;
     if (!user || !user.id) return;
 
-    const metadata = user.user_metadata || {};
     await request("wordle_profiles", {
       method: "POST",
       authToken: session.access_token,
@@ -335,7 +376,7 @@
         user_id: user.id,
         email: user.email || null,
         display_name: getPlayerDisplayName(session),
-        avatar_url: metadata.avatar_url || metadata.picture || null,
+        avatar_url: getPlayerAvatarUrl(session) || null,
         last_seen: new Date().toISOString()
       })
     });
@@ -434,6 +475,7 @@
     signOutPlayer,
     getValidPlayerSession,
     getPlayerDisplayName,
+    getPlayerAvatarUrl,
     signInAdmin,
     signOutAdmin,
     getValidAdminSession
