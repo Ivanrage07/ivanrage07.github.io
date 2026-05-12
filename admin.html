@@ -6,6 +6,7 @@
   <title>WORDLORD Leaderboard</title>
   <style>
     :root {
+      --sidebar-width: 172px;
       --bg: #121213;
       --surface: #1a1a1b;
       --surface-2: #202124;
@@ -47,6 +48,11 @@
       color: var(--text);
       font-family: Arial, Helvetica, sans-serif;
       min-height: 100vh;
+      line-height: 1.35;
+    }
+
+    body.sidebar-open {
+      overflow: hidden;
     }
 
     button,
@@ -63,29 +69,30 @@
     }
 
     header {
-      border-bottom: 1px solid var(--border);
-      background: var(--header-bg);
+      background: transparent;
     }
 
     .header-inner,
     main {
-      width: min(1180px, calc(100vw - 28px));
+      width: min(560px, calc(100vw - 32px));
       margin: 0 auto;
     }
 
     .header-inner {
-      min-height: 64px;
+      min-height: 118px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+      justify-content: center;
+      padding: 30px 0 12px;
+      position: relative;
     }
 
     h1 {
       margin: 0;
       font-family: Georgia, "Times New Roman", serif;
-      font-size: 30px;
+      font-size: clamp(42px, 8vw, 70px);
       letter-spacing: 0;
+      text-align: center;
     }
 
     a,
@@ -117,14 +124,48 @@
     }
 
     .icon-button {
-      min-width: 42px;
-      height: 42px;
+      min-width: 48px;
+      height: 48px;
       padding: 0;
     }
 
+    .menu-button {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 24;
+      border-radius: 14px;
+      background: transparent;
+    }
+
+    .menu-button:hover {
+      background: var(--surface-2);
+    }
+
+    .hamburger {
+      width: 26px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .hamburger span {
+      display: block;
+      height: 3px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
     .profile-wrap {
-      position: relative;
-      z-index: 12;
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 24;
+    }
+
+    body.sidebar-open .profile-wrap,
+    body.sidebar-open .menu-button {
+      opacity: 0;
+      pointer-events: none;
     }
 
     .profile-wrap[hidden],
@@ -257,14 +298,108 @@
       color: #ffffff;
     }
 
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      background: rgba(0, 0, 0, 0.46);
+      z-index: 20;
+    }
+
+    body.sidebar-open .sidebar-backdrop {
+      display: block;
+    }
+
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-width);
+      background: var(--surface);
+      padding: 12px 10px;
+      z-index: 22;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transform: translateX(calc(-100% - 1px));
+      transition: transform 0.2s ease;
+      box-shadow: 16px 0 36px rgba(0, 0, 0, 0.32);
+    }
+
+    body.sidebar-open .side-nav {
+      transform: translateX(0);
+    }
+
+    .side-brand,
+    .side-link {
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 900;
+      text-align: left;
+    }
+
+    .side-brand {
+      background: var(--correct);
+      padding: 0 10px;
+      letter-spacing: 0;
+    }
+
+    .mode-links {
+      display: grid;
+      gap: 8px;
+    }
+
+    .side-link {
+      background: transparent;
+      padding: 0 10px;
+    }
+
+    .side-link:hover,
+    .side-link.active {
+      background: var(--surface-2);
+    }
+
+    .side-link.active {
+      box-shadow: inset 0 0 0 1px rgba(82, 196, 33, 0.48);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      right: 12px;
+      bottom: 14px;
+      width: 46px;
+      height: 46px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle:hover {
+      background: var(--correct);
+      color: #ffffff;
+    }
+
     main {
-      padding: 22px 0 40px;
+      padding: 0 0 40px;
     }
 
     .status {
       color: var(--muted);
-      min-height: 24px;
-      margin: 0 0 16px;
+      min-height: 20px;
+      margin: 0 0 12px;
+      text-align: center;
     }
 
     .panel-heading,
@@ -277,17 +412,20 @@
     }
 
     .panel-heading {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
+      padding: 0 0 14px;
+      border-bottom: 0;
+      justify-content: center;
+      text-align: center;
+      flex-direction: column;
     }
 
     .panel-heading h2 {
       margin: 0;
-      font-size: 18px;
+      font-size: 20px;
     }
 
     .toolbar {
-      justify-content: flex-end;
+      justify-content: center;
     }
 
     .toolbar select {
@@ -325,7 +463,7 @@
     .panel {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 14px;
     }
 
     .stat {
@@ -348,12 +486,13 @@
     }
 
     .panel {
-      overflow: hidden;
-      margin-top: 16px;
+      overflow: visible;
+      margin-top: 0;
+      padding: 18px;
     }
 
     .panel > .status {
-      padding: 12px 16px 0;
+      padding: 0;
     }
 
     .panel h2,
@@ -387,28 +526,46 @@
     }
 
     .table-wrap {
-      overflow: auto;
+      overflow: visible;
     }
 
     table {
       width: 100%;
-      border-collapse: collapse;
-      min-width: 840px;
+      min-width: 0;
+      border-collapse: separate;
+      border-spacing: 0 10px;
     }
 
     th,
     td {
-      padding: 11px 12px;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 0;
+      text-align: center;
       vertical-align: middle;
-      white-space: nowrap;
+      white-space: normal;
     }
 
     th {
       color: var(--muted);
       font-size: 12px;
       text-transform: uppercase;
+    }
+
+    tbody td {
+      background: var(--surface-2);
+      font-weight: 900;
+    }
+
+    tbody td:first-child {
+      width: 86px;
+      border-radius: 14px 0 0 14px;
+      color: var(--correct);
+      font-size: 22px;
+    }
+
+    tbody td:last-child {
+      border-radius: 0 14px 14px 0;
+      font-size: 18px;
     }
 
     td.answer {
@@ -440,6 +597,7 @@
       padding: 26px 16px;
       color: var(--muted);
       text-align: center;
+      border-radius: 14px;
     }
 
     .leaderboard-more {
@@ -488,9 +646,8 @@
 
     @media (max-width: 760px) {
       .header-inner {
-        align-items: flex-start;
-        flex-direction: column;
-        padding: 14px 0;
+        min-height: 104px;
+        padding: 26px 0 10px;
       }
 
       .filters,
@@ -499,52 +656,90 @@
       }
 
       .panel-heading {
-        align-items: flex-start;
-        flex-direction: column;
+        align-items: center;
       }
 
       h1 {
-        font-size: 26px;
+        font-size: 40px;
+      }
+
+      .side-nav {
+        width: min(196px, 72vw);
+      }
+
+      .profile-wrap {
+        top: 12px;
+        right: 12px;
+      }
+
+      .menu-button {
+        top: 12px;
+        left: 12px;
+      }
+
+      .toolbar {
+        width: 100%;
+      }
+
+      .toolbar select,
+      .toolbar button {
+        min-height: 44px;
       }
     }
   </style>
 </head>
 <body>
+  <aside class="side-nav" aria-label="Game modes">
+    <button id="homeButton" class="side-brand" type="button">LORDGAMES</button>
+    <nav class="mode-links" aria-label="Game modes">
+      <button id="sideDailyButton" class="side-link" type="button">Daily</button>
+      <button id="sideCasualButton" class="side-link" type="button">Casual</button>
+      <button id="sideCluelessButton" class="side-link" type="button">Cluelord</button>
+      <button id="sideLeaderboardButton" class="side-link active" type="button">Leaderboard</button>
+    </nav>
+    <button id="themeButton" class="theme-toggle" type="button" title="Theme" aria-label="Toggle light or dark mode">&#9790;</button>
+  </aside>
+  <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
   <header>
     <div class="header-inner">
+      <button id="menuButton" class="icon-button menu-button" type="button" title="Menu" aria-label="Open game menu" aria-expanded="false">
+        <span class="hamburger" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </button>
       <h1>Leaderboard</h1>
-      <div class="header-actions">
-        <a class="button" href="index.html">Game</a>
-        <button id="themeButton" class="icon-button" type="button" title="Theme" aria-label="Toggle light or dark mode">☾</button>
-        <div id="profileWrap" class="profile-wrap" hidden>
-          <button id="profileButton" class="profile-button" type="button" title="Account" aria-label="Account" aria-expanded="false">
-            <img id="profileAvatar" class="profile-avatar" alt="" hidden />
-            <span id="profileInitial" class="profile-initial" aria-hidden="true">?</span>
-          </button>
-          <div id="profileMenu" class="profile-menu" role="menu" hidden>
-            <div>
-              <div id="profileName" class="profile-name">Guest</div>
-              <div id="profileEmail" class="profile-email">Sign in to set a username</div>
-            </div>
-            <form id="profileUsernameForm" class="profile-form" hidden>
-              <label for="profileUsernameInput">Username</label>
-              <div class="profile-row">
-                <input id="profileUsernameInput" class="profile-input" type="text" maxlength="24" autocomplete="nickname" />
-                <button id="profileUsernameSave" class="profile-save" type="submit">Save</button>
-              </div>
-              <p id="profileFeedback" class="profile-feedback"></p>
-            </form>
-            <button id="profileActionButton" class="profile-action" type="button">Sign in with Google</button>
-          </div>
-        </div>
-      </div>
     </div>
   </header>
+
+  <div id="profileWrap" class="profile-wrap" hidden>
+    <button id="profileButton" class="profile-button" type="button" title="Account" aria-label="Account" aria-expanded="false">
+      <img id="profileAvatar" class="profile-avatar" alt="" hidden />
+      <span id="profileInitial" class="profile-initial" aria-hidden="true">?</span>
+    </button>
+    <div id="profileMenu" class="profile-menu" role="menu" hidden>
+      <div>
+        <div id="profileName" class="profile-name">Guest</div>
+        <div id="profileEmail" class="profile-email">Sign in to set a username</div>
+      </div>
+      <form id="profileUsernameForm" class="profile-form" hidden>
+        <label for="profileUsernameInput">Username</label>
+        <div class="profile-row">
+          <input id="profileUsernameInput" class="profile-input" type="text" maxlength="24" autocomplete="nickname" />
+          <button id="profileUsernameSave" class="profile-save" type="submit">Save</button>
+        </div>
+        <p id="profileFeedback" class="profile-feedback"></p>
+      </form>
+      <button id="profileActionButton" class="profile-action" type="button">Sign in with Google</button>
+    </div>
+  </div>
 
   <main>
     <section id="publicLeaderboard" class="panel">
       <div class="panel-heading">
-        <h2>Leaderboard</h2>
+        <h2>Top Players</h2>
         <div class="toolbar">
           <select id="publicLimitFilter" aria-label="Leaderboard size">
             <option value="10">Top 10</option>
@@ -560,7 +755,7 @@
           <thead>
             <tr>
               <th>Rank</th>
-              <th>Player</th>
+              <th>Name</th>
             </tr>
           </thead>
           <tbody id="publicLeaderboardBody"></tbody>
@@ -603,6 +798,13 @@
     const passwordInput = document.getElementById("passwordInput");
     const loginButton = document.getElementById("loginButton");
     const authError = document.getElementById("authError");
+    const homeButton = document.getElementById("homeButton");
+    const sideDailyButton = document.getElementById("sideDailyButton");
+    const sideCasualButton = document.getElementById("sideCasualButton");
+    const sideCluelessButton = document.getElementById("sideCluelessButton");
+    const sideLeaderboardButton = document.getElementById("sideLeaderboardButton");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+    const menuButton = document.getElementById("menuButton");
     const publicLeaderboardStatus = document.getElementById("publicLeaderboardStatus");
     const publicLeaderboardBody = document.getElementById("publicLeaderboardBody");
     const publicLimitFilter = document.getElementById("publicLimitFilter");
@@ -640,6 +842,19 @@
     initTheme();
     initAccountSystem();
     loadPublicLeaderboard();
+    menuButton.addEventListener("click", toggleSidebar);
+    sidebarBackdrop.addEventListener("click", closeSidebar);
+    homeButton.addEventListener("click", () => {
+      closeSidebar();
+      window.location.href = "index.html";
+    });
+    sideDailyButton.addEventListener("click", () => openWordlordMode("daily"));
+    sideCasualButton.addEventListener("click", () => openWordlordMode("casual"));
+    sideCluelessButton.addEventListener("click", () => {
+      closeSidebar();
+      window.location.href = "clueless.html";
+    });
+    sideLeaderboardButton.addEventListener("click", closeSidebar);
     themeButton.addEventListener("click", toggleTheme);
     publicLimitFilter.addEventListener("change", loadPublicLeaderboard);
     publicRefreshButton.addEventListener("click", loadPublicLeaderboard);
@@ -661,6 +876,12 @@
         closeProfileMenu();
       }
     });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeSidebar();
+        closeProfileMenu();
+      }
+    });
 
     function initTheme() {
       const savedTheme = localStorage.getItem(themeKey);
@@ -671,7 +892,7 @@
     function setTheme(theme) {
       const nextTheme = theme === "light" ? "light" : "dark";
       document.documentElement.dataset.theme = nextTheme;
-      themeButton.textContent = nextTheme === "light" ? "☀" : "☾";
+      themeButton.textContent = nextTheme === "light" ? "\u2600" : "\u263e";
       themeButton.title = nextTheme === "light" ? "Switch to dark mode" : "Switch to light mode";
     }
 
@@ -679,6 +900,27 @@
       const nextTheme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
       localStorage.setItem(themeKey, nextTheme);
       setTheme(nextTheme);
+    }
+
+    function toggleSidebar() {
+      const shouldOpen = !document.body.classList.contains("sidebar-open");
+      document.body.classList.toggle("sidebar-open", shouldOpen);
+      if (shouldOpen) closeProfileMenu();
+      menuButton.setAttribute("aria-expanded", String(shouldOpen));
+      menuButton.setAttribute("aria-label", shouldOpen ? "Close game menu" : "Open game menu");
+    }
+
+    function closeSidebar() {
+      document.body.classList.remove("sidebar-open");
+      menuButton.setAttribute("aria-expanded", "false");
+      menuButton.setAttribute("aria-label", "Open game menu");
+    }
+
+    function openWordlordMode(mode) {
+      closeSidebar();
+      const url = new URL("index.html", window.location.href);
+      url.searchParams.set("mode", mode);
+      window.location.href = url.toString();
     }
 
     async function initAccountSystem() {
@@ -817,7 +1059,7 @@
         const rows = await window.WordleBackend.fetchPublicLeaderboard(Number(publicLimitFilter.value));
         renderPublicLeaderboard(rows);
         publicLeaderboardStatus.textContent = rows.length
-          ? "Signed-in players only."
+          ? ""
           : "No signed-in plays yet.";
       } catch (error) {
         console.warn("Unable to load public leaderboard.", error);
